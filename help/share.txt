@@ -1,0 +1,291 @@
+;
+;-------------------------------------------------------------------
+!TOPIC 500 Share
+The Share unit implements assorted network-related functions. Many will
+work whenever MS-DOS version 3.1 or later is in use. Others require
+loading the SHARE.EXE utility provided with MS-DOS. Some require that
+the workstation be attached to an MS-NET compatible network such as
+3Com's 3+. Novell's Advanced NetWare emulates most of these functions,
+so almost all the functions work with NetWare. If a function's
+documentation indicates that SHARE.EXE must be loaded, in actuality any
+network operating system that supports its functions may be loaded in its
+place.
+
+  0510CancelRedirection              0517Declarations
+  0501DosLockRec                     0514GetExtendedError
+  0506GetMachineName                 0505GetPrinterSetup
+  0511GetRedirectionEntry            0512GetTempFileName
+  0507IBMPCLanLoaded                 0515IsDriveLocal
+  0516IsFileLocal                    0508PCLanInfo
+  0509RedirectDevice                 0504SetPrinterSetup
+  0513ShareInstalled                 0502UnlockDosRec
+  0503UpdateFile
+;
+;-------------------------------------------------------------------
+!TOPIC 501 DosLockRec
+!NOINDEX
+function 0500Share.DosLockRec(var F; FilePosition : LongInt;
+                          FileLength : LongInt) : Word;
+
+This function uses DOS call 5Ch to lock all or part of a file.
+FilePosition is the byte offset to start the lock (the first byte in the
+file is offset 0), and FileLength is the number of bytes to lock.
+
+See also:  0502UnlockDosRec
+;
+;-------------------------------------------------------------------
+!TOPIC 502 UnlockDosRec
+!NOINDEX
+function 0500Share.UnlockDosRec(var F; FilePosition : LongInt;
+                            FileLength : LongInt) : Word;
+
+Similar to LockFile, except uses DOS call 5Ch subfunction 1 to unlock a
+record.
+
+See also:  0501DosLockRec
+;
+;-------------------------------------------------------------------
+!TOPIC 503 UpdateFile
+!NOINDEX
+function 0500Share.UpdateFile(var F) : Word;
+
+Flushes an open file to disk. Forces a duplicate of file handle, then
+closes it. Error codes are: 0 for success, 4 if no handles are available,
+or 6 if handle invalid or file not open.
+;
+;-------------------------------------------------------------------
+!TOPIC 504 SetPrinterSetup
+!NOINDEX
+function 0500Share.SetPrinterSetup(SetUpStr : PrinterSetUpStr;
+                               RedirectionIndex : Word) : Boolean;
+
+Sets the printer setup string for the print device at entry
+RedirectionIndex in the redirection list.
+
+See also:  0505GetPrinterSetup
+;
+;-------------------------------------------------------------------
+!TOPIC 505 GetPrinterSetup
+!NOINDEX
+function 0500Share.GetPrinterSetup(var SetUpStr : PrinterSetUpStr;
+                               RedirectionIndex : Word) : Boolean;
+
+Returns the printer setup string for the print device at entry
+RedirectionIndex in the redirection list.
+
+See also:  0504SetPrinterSetup
+;
+;-------------------------------------------------------------------
+!TOPIC 506 GetMachineName
+!NOINDEX
+function 0500Share.GetMachineName(var S : NBNameStr;
+                              var MachNum : Byte) : Boolean;
+
+Returns the machine name and the NetBIOS machine name number associated
+with the calling station.
+
+See also:  0508PCLanInfo
+;
+;-------------------------------------------------------------------
+!TOPIC 507 IBMPCLanLoaded
+!NOINDEX
+function 0500Share.IBMPCLanLoaded(var Lan : PCLanOpType) : Boolean;
+
+Returns True if IBM's PC-LAN program is loaded. If PC-Lan is loaded, then
+the parameter Lan contains a value of PCLanOpType. This type indicates the
+mode which the station is operating.
+
+Note: Novell's Advanced NetWare will pass this test if INT24.COM is loaded.
+
+See also:  0508PCLanInfo
+;
+;-------------------------------------------------------------------
+!TOPIC 508 PCLanInfo
+!NOINDEX
+function 0500Share.PCLanInfo(var Lan : PCLanOpType;
+                         var MachineName : NBNameStr;
+                         var MachineNo : Byte) : Boolean;
+
+Returns True if PC Lan program is loaded, and returns the operation type,
+Machine's NetBIOS name, and the NetBIOS name table number.
+
+Note: Novell's Advanced NetWare will pass this test if INT24.COM is loaded.
+
+See also:  0506GetMachineName  0507IBMPCLanLoaded
+;
+;-------------------------------------------------------------------
+!TOPIC 509 RedirectDevice
+!NOINDEX
+function 0500Share.RedirectDevice(TypeOfDev : DeviceType;
+                              LocalName : NBNameStr;
+                              NetWorkName, Password : NetworkStr;
+                              Parameter : Word) : Word;
+
+Establish a redirection across the network. TypeOfDev specifies whether the
+device to be redirected is a printer or a drive, LocalName is the name of
+the local device to be redirected, NetworkName is the network resource to
+redirect LocalName to, Password is an optional password string used to
+grant access to the network resource, and Parameter is a word sized user
+defined parameter to be returned by subsequent calls to
+GetRedirectionEntry. Possible function results:
+
+!NOWRAP
+0  success
+1  function code invalid (source or destination string
+   in wrong format or source device already redirected)
+3  path not found
+5  access denied
+8  insufficient memory
+!WRAP
+
+See also:  0510CancelRedirection  0511GetRedirectionEntry
+;
+;-------------------------------------------------------------------
+!TOPIC 510 CancelRedirection
+!NOINDEX
+function 0500Share.CancelRedirection(LocalName : NBNameStr) : Word;
+
+Cancels a redirection. LocalName is the name of the local device that was
+previously redirected.
+
+See also:  0511GetRedirectionEntry  0509RedirectDevice
+;
+;-------------------------------------------------------------------
+!TOPIC 511 GetRedirectionEntry
+!NOINDEX
+function 0500Share.GetRedirectionEntry(RDLIndex : Word;
+                                   var LocalName : NBNameStr;
+                                   var NetName : NetworkStr;
+                                   var Parameter : Word;
+                                   var Valid : Boolean;
+                                   var Dev : DeviceType) : Word;
+
+Return redirection entry information from the redirector.
+
+See also:  0510CancelRedirection  0509RedirectDevice
+;
+;-------------------------------------------------------------------
+!TOPIC 512 GetTempFileName
+!NOINDEX
+function 0500Share.GetTempFileName(PathN : PathName;
+                               var TempFileName : PathName) : Word;
+
+Returns a filename guaranteed to be unique.
+;
+;-------------------------------------------------------------------
+!TOPIC 513 ShareInstalled
+!NOINDEX
+function 0500Share.ShareInstalled : Boolean;
+
+Returns True if SHARE is installed.
+;
+;-------------------------------------------------------------------
+!TOPIC 514 GetExtendedError
+!NOINDEX
+function 0500Share.GetExtendedError(var Class, Action, Locus : Byte) : Word;
+
+Returns DOS Extended error information (see pages 306-308 of the manual for
+more information).
+;
+;-------------------------------------------------------------------
+!TOPIC 515 IsDriveLocal
+!NOINDEX
+function 0500Share.IsDriveLocal(Drive : Byte) : Boolean;
+
+Returns True if a drive is local, and False if it is on a remote machine.
+
+See also:  0516IsFileLocal
+;
+;-------------------------------------------------------------------
+!TOPIC 516 IsFileLocal
+!NOINDEX
+function 0500Share.IsFileLocal(var F) : Boolean;
+
+Returns True if a local is local, and False if it is on a remote machine.
+
+See also:  0515IsDriveLocal
+;
+;-------------------------------------------------------------------
+!TOPIC 517 Declarations
+!NOINDEX
+!NOSEARCH
+The following constants and types are interfaced by the 0500Share unit:
+
+  0521DeviceType                     0518FileNotOpen
+  0525NBNameStr                      0524NetworkStr
+  0523PCLanOpType                    0520PrinterSetupMax
+  0522PrinterSetupStr                0519WrongDosVersion
+;
+;-------------------------------------------------------------------
+!TOPIC 518 FileNotOpen
+!NOINDEX
+const
+  FileNotOpen = $FFFE;
+
+An error code indicating that the file referenced in a DOS call is not
+open.
+;
+;-------------------------------------------------------------------
+!TOPIC 519 WrongDosVersion
+!NOINDEX
+const
+  WrongDosVersion = $FFFD;
+
+An error code indicating that a version of DOS is in use that does not
+support network functions. DOS network functions are available only to DOS
+3.0 or greater.
+;
+;-------------------------------------------------------------------
+!TOPIC 520 PrinterSetupMax
+!NOINDEX
+const
+  PrinterSetupMax = 64;
+
+The maximum length of a printer setup string (dictated by DOS).
+;
+;-------------------------------------------------------------------
+!TOPIC 521 DeviceType
+!NOINDEX
+type
+  DeviceType = (DevPrinter, DevDrive);
+
+This enumerated type defines the two types of devices used in network
+related DOS calls.
+;
+;-------------------------------------------------------------------
+!TOPIC 522 PrinterSetupStr
+!NOINDEX
+type
+  PrinterSetupStr = string[0520PrinterSetupMax];
+
+A string type for the printer setup strings used by 0504SetPrinterSetup
+and 0505GetPrinterSetup.
+;
+;-------------------------------------------------------------------
+!TOPIC 523 PCLanOpType
+!NOINDEX
+type
+  PCLanOpType = (LanUnknown, LanRedirector, LanReceiver,
+                 LanMessenger, LanServer);
+
+An enumerated type defining the types of nodes under PC-Lan/MS-NET.
+;
+;-------------------------------------------------------------------
+!TOPIC 524 NetworkStr
+!NOINDEX
+type
+  NetworkStr = string[128];
+
+A string type used for network names.
+;
+;-------------------------------------------------------------------
+!TOPIC 525 NBNameStr
+!NOINDEX
+const
+  NBNameMax = 16;
+!LINE
+type
+  NBNameStr = string[NBNameMax];
+
+A string type used for NetBIOS names. The maximum length of the string is
+dictated by NetBIOS.

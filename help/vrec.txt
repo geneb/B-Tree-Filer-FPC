@@ -1,0 +1,199 @@
+;
+;-------------------------------------------------------------------
+!TOPIC 544 VRec
+The VRec unit uses a clever method to extend B-Tree Filer for variable
+length records. Such records become extremely important when the database
+requires memo fields, since allocating record space for the longest
+possible memo can waste lots of disk space fast.
+
+When using variable length records, it is imperative that you reserve the
+first four bytes of each data record for B-Tree Filer's use. Without
+those first four bytes, an automatic reconstruction cannot take place, and
+it would be very difficult to reconstruct a variable length record
+fileblock manually.
+
+Before using any other routines in the VRec unit, an application must
+first create a variable length record buffer by calling
+0545BTCreateVariableRecBuffer or 0546BTSetVariableRecBuffer.
+
+VRec provides the following routines:
+
+  0548BTAddVariableRec                 0545BTCreateVariableRecBuffer
+  0549BTDeleteVariableRec              0551BTGetVariableRec
+  0552BTGetVariableRecLength           0553BTGetVariableRecPart
+  0557BTGetVRecPartReadOnly            0558BTGetVRecReadOnly
+  0550BTPutVariableRec                 0547BTReleaseVariableRecBuffer
+  0546BTSetVariableRecBuffer           0554Declarations
+;
+;-------------------------------------------------------------------
+!TOPIC 545 BTCreateVariableRecBuffer
+!NOINDEX
+function 0544VRec.BTCreateVariableRecBuffer(IFBPtr : IsamFileBlockPtr)
+  : Boolean;
+
+This function must be called after the specified fileblock is opened or
+created, and before any other VRec routines are called. It allocates a
+buffer that is used for reading variable length records. Only one buffer
+needs to be allocated for the entire program, but you should always use the
+fileblock that will contain the largest record.
+
+See also:  0547BTReleaseVariableRecBuffer  0546BTSetVariableRecBuffer
+;
+;-------------------------------------------------------------------
+!TOPIC 546 BTSetVariableRecBuffer
+!NOINDEX
+function 0544VRec.BTSetVariableRecBuffer(Size : Word) : Boolean;
+
+This routine may be called in place of BTCreateVariableRecBuffer. It
+allocates a buffer of the specified Size that is used for reading
+variable length records. This buffer needs to be allocated only once, and
+it can be used for all Fileblocks in the program. Size must be as large
+as the largest record used by any fileblock.
+
+See also:  0545BTCreateVariableRecBuffer  0547BTReleaseVariableRecBuffer
+;
+;-------------------------------------------------------------------
+!TOPIC 547 BTReleaseVariableRecBuffer
+!NOINDEX
+procedure 0544VRec.BTReleaseVariableRecBuffer;
+
+This procedure releases the buffer allocated by BTCreateVariableRecBuffer
+or BTSetVariableRecBuffer. Only after calling this routine may
+0545BTCreateVariableRecBuffer or 0546BTSetVariableRecBuffer be called
+again.
+;
+;-------------------------------------------------------------------
+!TOPIC 548 BTAddVariableRec
+!NOINDEX
+procedure 0544VRec.BTAddVariableRec(IFBPtr : IsamFileBlockPtr;
+                                var RefNr : LongInt;
+                                var Source;
+                                Len : Word);
+
+This procedure replaces the procedure BTAddRec for variable length
+records. Its use is identical except that the Len parameter must
+contain the actual length of the record.
+
+See also:  0127BTAddRec  0549BTDeleteVariableRec
+;
+;-------------------------------------------------------------------
+!TOPIC 549 BTDeleteVariableRec
+!NOINDEX
+procedure 0544VRec.BTDeleteVariableRec(IFBPtr : IsamFileBlockPtr;
+                                   RefNr : LongInt);
+
+This procedure replaces the procedure BTDeleteRec for variable length
+records. Its use is identical.
+
+See also:  0548BTAddVariableRec  0128BTDeleteRec
+;
+;-------------------------------------------------------------------
+!TOPIC 550 BTPutVariableRec
+!NOINDEX
+procedure 0544VRec.BTPutVariableRec(IFBPtr : IsamFileBlockPtr;
+                                RefNr : LongInt;
+                                var Source;
+                                Len : Word);
+
+This procedure replaces the procedure BTPutRec for variable length records.
+Its use is identical except that the parameter Len must contain the exact
+length of the passed structure.
+
+See also:  0551BTGetVariableRec  0124BTPutRec
+;
+;-------------------------------------------------------------------
+!TOPIC 551 BTGetVariableRec
+!NOINDEX
+procedure 0544VRec.BTGetVariableRec(IFBPtr : IsamFileBlockPtr;
+                                RefNr : LongInt;
+                                var Destination;
+                                var Len : Word);
+
+This procedure replaces the procedure BTGetRec for variable length records.
+Its use is identical except that the parameter Len will return the length
+of the record.
+
+See also:  0125BTGetRec  0550BTPutVariableRec
+;
+;-------------------------------------------------------------------
+!TOPIC 552 BTGetVariableRecLength
+!NOINDEX
+procedure 0544VRec.BTGetVariableRecLength(IFBPtr : IsamFileBlockPtr;
+                                      RefNr : LongInt;
+                                      var Len : Word);
+
+This procedure functions like BTGetVariableRec, except that it doesn't
+return any data, only the length of the variable record with the reference
+RefNr.
+
+See also:  0551BTGetVariableRec
+;
+;-------------------------------------------------------------------
+!TOPIC 553 BTGetVariableRecPart
+!NOINDEX
+procedure 0544VRec.BTGetVariableRecPart(IFBPtr : IsamFileBlockPtr;
+                                    RefNr : LongInt;
+                                    var Dest; var Len : Word);
+
+This procedure reads the first Len bytes of a variable length
+record. Len also returns the total number of bytes the routine
+was able to read.
+
+See also: 0551BTGetVariableRec
+;
+;-------------------------------------------------------------------
+!TOPIC 554 Declarations
+!NOINDEX
+!NOSEARCH
+VRec interfaces the following constants and variables:
+
+  0556IsamVRecBufSize                  0555MaxVariableRecLength
+;
+;-------------------------------------------------------------------
+!TOPIC 555 MaxVariableRecLength
+!NOINDEX
+const
+  MaxVariableRecLength = $FFF0;
+
+The longest allowable length of a variable length record.
+;
+;-------------------------------------------------------------------
+!TOPIC 556 IsamVRecBufSize
+!NOINDEX
+var
+  IsamVRecBufSize : Word;
+
+The current size of the VRec section buffer.
+;
+;-------------------------------------------------------------------
+!TOPIC 557 BTGetVRecPartReadOnly
+!NOINDEX
+procedure 0544VRec.BTGetVRecPartReadOnly(IFBPtr : IsamFileBlockPtr;
+                                     RefNr : LongInt;
+                                     var Destination;
+                                     var Len : Word);
+
+This procedure works like BTGetVariableRecPart, except that it will
+read a record even if it is locked by another station. Before
+calling the routine, Len must specify the number of bytes to read
+from the record. If the record is locked, the first four bytes
+returned will be uninitialized and IsamError will return 10205 as a
+warning.
+
+See also: 0553BTGetVariableRecPart  0558BTGetVRecReadOnly
+;
+;-------------------------------------------------------------------
+!TOPIC 558 BTGetVRecReadOnly
+!NOINDEX
+procedure 0544VRec.BTGetVRecReadOnly(IFBPtr : IsamFileBlockPtr;
+                                 RefNr : LongInt;
+                                 var Destination;
+                                 var Len : Word);
+
+This procedure works like BTGetVariableRec, except that it will read
+a record even if it is locked by another station. Len returns the
+length of the record. If the record is locked, the first four bytes
+returned will be uninitialized and IsamError will return 10205 as a
+warning.
+
+See also: 0551BTGetVariableRec  0557BTGetVRecPartReadOnly

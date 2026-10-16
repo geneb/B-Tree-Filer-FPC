@@ -1,0 +1,121 @@
+          List of files distributed with B-Tree Filer 5.41
+
+FILER disk
+----------------
+read.me           - latest news
+packing.lst       - this list of files
+lharc.exe         - dearchiving program for LZH files
+lharcman.lzh      - documentation for LHARC.EXE
+filer.lzh         - archive containing B-Tree Filer single user source code
+  basesupp.pas        DOS/Windows compatibility unit
+  bigsort.pas         sorting demonstration program
+  browser.inc           included in browser.pas
+  browser.pas         file browsing unit
+  btdefine.inc        conditional defines affecting all units
+  carrconv.pas        converts dBase character arrays to Pascal data types
+  convert.pas         shows how to convert Database Toolbox data to Filer
+  db2isam.pas         example program to convert any dBase file to Filer
+  dbimpexp.pas        conversion of dBase files to/from Filer fileblocks
+  dbimpexp.in1          included in dbimpexp.pas
+  dbimpexp.in2          included in dbimpexp.pas
+  dbimpexp.doc        documentation for dBase conversion
+  emsheap.cfg           included in emsheap.pas
+  emsheap.pas         EMS heap manager unit
+  emssupp.pas         low level EMS support unit
+  errors              listing of all Filer error codes
+  example.pas         single-user fileblock example routines
+  fastupd.541         changes from previous version to this one
+  filer.cfg           configuration constants for filer.pas
+  filer.inc             included in filer.pas
+  filer.mak           make file for single user B-Tree Filer
+  filer.pas           the main fileblock management unit
+  fixtovar.pas        unit to convert fixed length records to variable length
+  isam2db.pas         example program to convert a Filer file to dBase
+  isambase.inc          included in filer.pas
+  isamlow.inc           included in filer.pas
+  isamtool.pas        miscellaneous routines supporting filer unit
+  isamwork.inc          included in filer.pas
+  iscompat.pas        version 5.0x backwards compatibility unit for filer
+  msort.pas           merge sort unit
+  msortems.inc          included in msort.pas
+  msortinf.inc          included in msort.pas
+  netdemo.pas         filer demonstration program (depends on Turbo Professional)
+  numkeys.asm           assembly language for numkeys.obj
+  numkeys.obj           linked into numkeys.pas
+  numkeys.pas         numeric keys unit
+  read.1st            full news to update the printed manual
+  rebuild.pas         fileblock rebuilding unit
+  reorg.pas           fileblock reorganization unit
+  simpdemo.pas        filer demonstration program (standalone)
+  tpalloc.pas         heap allocation unit for blocks >64K
+  tpcmd.pas           command processing unit used by browser.pas
+  tpdefine.inc        conditional defines for tpxxxx.pas units
+  vrcompat.pas        version 5.0x backwards compatibility unit for vrec
+  vrebuild.pas        vrec fileblock rebuilding unit
+  vrec.pas            variable length record support unit
+  vreorg.pas          vrec fileblock reorganization unit
+util.lzh          - archive containing B-Tree Filer utility programs
+  upgrade.exe         program to upgrade Filer 5.0x programs to 5.21 or later
+  dbox.upg            substitution file for DatabaseToolbox
+  filer.upg           substitution file used by UPGRADE.EXE
+  printdoc.exe        program to paginate and print text files
+
+DEMO/HELP disk
+----------------
+netdemo.exe       - precompiled version of netdemo demonstration program
+address.dat       - data file for netdemo
+address.ix        - address file for netdemo
+bigsort.exe       - precompiled version of bigsort demonstration program
+btfhelp.lzh       - archive containing help text and popup help utility
+  pophelp.exe         popup help utility
+  makehelp.exe        help compiler
+  *.txt               text files describing the various B-Tree Filer units
+
+NET disk (supplied only with Network version of B-Tree Filer)
+----------------
+netbonus.lzh      - BONUS file: NetWare function calls, misc NetBIOS
+                    functions, NetWare print queue management, network
+                    messaging tests, test network loading with fileblock
+                    operations
+netinfo.exe       - precompiled version of netinfo demonstration program
+nreceive.exe      - precompiled version of nreceive demonstration program
+nsend.exe         - precompiled version of nsend demonstration program
+netfiler.lzh      - archive containing B-Tree Filer network source code
+  ipxspx.asm          assembly language for ipxspx.obj
+  ipxspx.inc            included in netware.pas
+  ipxspx.obj            linked into netware.pas
+  ixpspxd.pas         IPX/SPX access DLL for Windows
+  isamnwrk.inc          included in filer.pas
+  isnetsup.inc          included in filer.pas
+  mesexamp.pas        NetWare and NetBIOS message demonstration program
+  nbchatw.pas         NetBIOS chat demonstration program for Windows
+  netbios.inc           included in netbios.pas
+  netbiosw.inc          included in netbios.pas
+  netbios.pas         NetBIOS access unit
+  netbiosd.pas        NetBIOS access DLL for Windows
+  netexamp.pas        network fileblock example routines
+  netfiler.mak        make file for network B-Tree Filer
+  netinfo.pas         NetWare and NetBIOS service demonstration program
+  netsema.pas         used by netdemo.pas
+  netware.inc           included in netware.pas
+  netware.pas         NetWare access unit
+  netwarew.inc          included in netware.pas
+  nreceive.pas        network file transfer demonstration program - receiving
+  nreceivw.pas        network file transfer demo for Windows
+  nsend.pas           network file transfer demonstration program - sending
+  nsendw.pas          network file transfer demo for Windows
+  share.inc             included in share.pas
+  sharew.inc            included in share.pas
+  share.pas           DOS 3.x SHARE access unit
+  windpmi.pas         Windows DPMI access unit
+
+BONUS disk
+----------------
+read.me!          - file describing bonus files
+extend.lzh        - increase number of file handles even for DOS <3.3
+fbrowse.lzh       - object-oriented fileblock browser for use with OPRO
+msortp.lzh        - MSORT rewritten to take advantage of protected mode
+obrowse.lzh       - OOP fileblock browsers for Windows/TV/OPRO
+oofiler.lzh       - fileblock management objects
+prealloc.lzh      - data and index file preallocation unit
+reindex.lzh       - fileblock reindexing units

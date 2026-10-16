@@ -1,0 +1,16 @@
+ignorecase = true
+#
+!tools/lharc.exe
+!tools/makehelp.exe
+!tools/pophelp.exe
+!tools/printdoc.exe
+!tools/upgrade.exe
+src/*.obj
+src/*.exe
+# Free Pascal build output
+src/units/
+src/bin/
+src/*.ppu
+src/*.o
+src/*.a
+src/*.res

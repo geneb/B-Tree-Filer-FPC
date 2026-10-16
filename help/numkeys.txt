@@ -1,0 +1,282 @@
+;
+;-------------------------------------------------------------------
+!TOPIC 468 NumKeys
+B-Tree Filer requires that all index keys take the form of a string. This
+offers the greatest flexibility in designing indexes: keys can be composed
+of several record fields, they can be stored in compressed format, they can
+be logically inverted, and so on. Nevertheless, numeric values are often
+desirable for keys because they encode unique information in a compact
+format.
+
+The NumKeys unit offers routines to convert numeric values to sortable
+key strings and back again. The strings produced are compact, and the exact
+numeric value may be recovered by calling the inverse routine. Although the
+encoded strings cannot be viewed directly, they are carefully designed to
+produce the correct sorting order when used in a B-Tree or in any data
+file.
+
+The NumKeys unit also contains several routines that can create packed
+key strings. Given a regular string, these routines will return a
+compressed version of it. There are also complementary routines provided to
+unpack a packed key string.
+
+There is also a routine provided that inverts a string key, to allow
+descending sorts.
+
+  0495DescendingKey                  0469Keys to numbers
+  0470Numbers to keys                0471Packing keys
+  0472Unpacking keys
+;
+;-------------------------------------------------------------------
+!TOPIC 469 Keys to numbers
+!NOINDEX
+!NOSEARCH
+The following routines convert from a sortable string key back to the
+numeric key:
+
+  0484KeyToBcd                       0486KeyToExt
+  0476KeyToInt                       0480KeyToLong
+  0482KeyToReal                      0474KeyToShort
+  0478KeyToWord
+;
+;-------------------------------------------------------------------
+!TOPIC 470 Numbers to keys
+!NOINDEX
+!NOSEARCH
+The following routines convert from a numeric type to a sortable string:
+
+  0483BcdToKey                       0485ExtToKey
+  0475IntToKey                       0479LongToKey
+  0481RealToKey                      0473ShortToKey
+  0477WordToKey
+;
+;-------------------------------------------------------------------
+!TOPIC 471 Packing keys
+!NOINDEX
+!NOSEARCH
+The following routines pack a key string:
+
+  0487Pack4BitKey                    0488Pack5BitKeyUC
+  0490Pack6BitKey                    0489Pack6BitKeyUC
+;
+;-------------------------------------------------------------------
+!TOPIC 472 Unpacking keys
+!NOINDEX
+!NOSEARCH
+The following routines unpack a key string:
+
+  0491Unpack4BitKey                  0492Unpack5BitKeyUC
+  0494Unpack6BitKey                  0493Unpack6BitKeyUC
+;
+;-------------------------------------------------------------------
+!TOPIC 473 ShortToKey
+!NOINDEX
+function 0468NumKeys.ShortToKey(S : ShortInt) : String1;
+
+Convert a shortint to a string.
+
+See also:  0474KeyToShort
+;
+;-------------------------------------------------------------------
+!TOPIC 474 KeyToShort
+!NOINDEX
+function 0468NumKeys.KeyToShort(S : String1) : ShortInt;
+
+Convert a string to a shortint.
+
+See also:  0473ShortToKey
+;
+;-------------------------------------------------------------------
+!TOPIC 475 IntToKey
+!NOINDEX
+function 0468NumKeys.IntToKey(I : Integer) : String2;
+
+Convert an integer to a string.
+
+See also:  0476KeyToInt
+;
+;-------------------------------------------------------------------
+!TOPIC 476 KeyToInt
+!NOINDEX
+function 0468NumKeys.KeyToInt(S : String2) : Integer;
+
+Convert a string to an integer.
+
+See also:  0475IntToKey
+;
+;-------------------------------------------------------------------
+!TOPIC 477 WordToKey
+!NOINDEX
+function 0468NumKeys.WordToKey(W : Word) : String2;
+
+Convert a word to a string.
+
+See also:  0478KeyToWord
+;
+;-------------------------------------------------------------------
+!TOPIC 478 KeyToWord
+!NOINDEX
+function 0468NumKeys.KeyToWord(S : String2) : Word;
+
+Convert a string to a word.
+
+See also:  0477WordToKey
+;
+;-------------------------------------------------------------------
+!TOPIC 479 LongToKey
+!NOINDEX
+function 0468NumKeys.LongToKey(L : LongInt) : String4;
+
+Convert a longint to a string.
+
+See also:  0480KeyToLong
+;
+;-------------------------------------------------------------------
+!TOPIC 480 KeyToLong
+!NOINDEX
+function 0468NumKeys.KeyToLong(S : String4) : LongInt;
+
+Convert a string to a longint.
+
+See also:  0479LongToKey
+;
+;-------------------------------------------------------------------
+!TOPIC 481 RealToKey
+!NOINDEX
+function 0468NumKeys.RealToKey(R : Real) : String6;
+
+Convert a real to a string.
+
+See also:  0482KeyToReal
+;
+;-------------------------------------------------------------------
+!TOPIC 482 KeyToReal
+!NOINDEX
+function 0468NumKeys.KeyToReal(S : String6) : Real;
+
+Convert a string to a real.
+
+See also:  0481RealToKey
+;
+;-------------------------------------------------------------------
+!TOPIC 483 BcdToKey
+!NOINDEX
+function 0468NumKeys.BcdToKey(var B) : String10;
+
+Convert a BCD real to a string.
+
+See also:  0484KeyToBcd
+;
+;-------------------------------------------------------------------
+!TOPIC 484 KeyToBcd
+!NOINDEX
+procedure 0468NumKeys.KeyToBcd(S : String10; var B);
+
+Convert a string to a BCD real.
+
+See also:  0483BcdToKey
+;
+;-------------------------------------------------------------------
+!TOPIC 485 ExtToKey
+!NOINDEX
+function 0468NumKeys.ExtToKey(E : Extended) : String10;
+
+Convert an extended (or any other 8087 real) to a string.
+
+See also:  0486KeyToExt
+;
+;-------------------------------------------------------------------
+!TOPIC 486 KeyToExt
+!NOINDEX
+procedure 0468NumKeys.KeyToExt(S : String10) : Extended;
+
+Convert a string to an extended.
+
+See also:  0485ExtToKey
+;
+;-------------------------------------------------------------------
+!TOPIC 487 Pack4BitKey
+!NOINDEX
+function 0468NumKeys.Pack4BitKey(Src : string; Len : Byte) : string;
+
+Pack the Src string into sequences of 4 bits. Len is the maximum length
+of the string to return. The following characters are mapped to 1-15,
+respectively, all others to 0: '(', ')', '+', '-', '.', '0'..'9'.
+
+See also:  0491Unpack4BitKey
+;
+;-------------------------------------------------------------------
+!TOPIC 488 Pack5BitKeyUC
+!NOINDEX
+function 0468NumKeys.Pack5BitKeyUC(Src : string; Len : Byte) : string;
+
+Pack the Src string into sequences of 5 bits. Len is the maximum length
+of the string to return. Characters from 'a' to 'z' are converted to upper
+case, then characters from 'A' to 'Z' are mapped to 1-26, all others to 0.
+
+See also:  0492Unpack5BitKeyUC
+;
+;-------------------------------------------------------------------
+!TOPIC 489 Pack6BitKeyUC
+!NOINDEX
+function 0468NumKeys.Pack6BitKeyUC(Src : string; Len : Byte) : string;
+
+Pack the Src string into sequences of 6 bits. Len is the maximum length
+of the string to return. Characters from 'a' to 'z' are converted to upper
+case, then characters from '!' to '_' are mapped to 1-63, all others to 0.
+
+See also:  0493Unpack6BitKeyUC
+;
+;-------------------------------------------------------------------
+!TOPIC 490 Pack6BitKey
+!NOINDEX
+function 0468NumKeys.Pack6BitKey(Src : string; Len : Byte) : string;
+
+Pack the Src string into sequences of 6 bits. Len is the maximum length
+of the string to return. Characters from '0'-'9' are mapped to 1-10,
+'A'-'Z' to 11-36, 'a'-'z' to 37-62, all others to 0.
+
+See also:  0494Unpack6BitKey
+;
+;-------------------------------------------------------------------
+!TOPIC 491 Unpack4BitKey
+!NOINDEX
+function 0468NumKeys.Unpack4BitKey(Src : string) : string;
+
+Unpack a key created by Pack4BitKey.
+
+See also:  0487Pack4BitKey
+;
+;-------------------------------------------------------------------
+!TOPIC 492 Unpack5BitKeyUC
+!NOINDEX
+function 0468NumKeys.Unpack5BitKeyUC(Src : string) : string;
+
+Unpack a key created by Pack5BitKeyUC.
+
+See also:  0488Pack5BitKeyUC
+;
+;-------------------------------------------------------------------
+!TOPIC 493 Unpack6BitKeyUC
+!NOINDEX
+function 0468NumKeys.Unpack6BitKeyUC(Src : string) : string;
+
+Unpack a key created by Pack6BitKeyUC.
+
+See also:  0489Pack6BitKeyUC
+;
+;-------------------------------------------------------------------
+!TOPIC 494 Unpack6BitKey
+!NOINDEX
+function 0468NumKeys.Unpack6BitKey(Src : string) : string;
+
+Unpack a key created by Pack6BitKey.
+
+See also:  0490Pack6BitKey
+;
+;-------------------------------------------------------------------
+!TOPIC 495 DescendingKey
+!NOINDEX
+function 0468NumKeys.DescendingKey(S : string; MaxLen : Byte) : string;
+
+Invert values in S to allow descending sorts, pad to MaxLen with #$FF.

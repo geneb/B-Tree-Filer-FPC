@@ -1,0 +1,1429 @@
+            Last Minute News on B-Tree Filer Version 5.41
+            =============================================
+
+This file describes changes, additions, and clarifications to B-Tree
+Filer that do not appear in the printed documentation. Please print
+and read this file prior to using B-Tree Filer, and save it for future
+reference. It includes the following sections:
+
+    1.  Compiler Version Support
+    2.  DOS Protected Mode and Windows Support
+    3.  Conditional Defines and Compiler Directives
+    4.  FILER
+    5.  EMSHEAP
+    6.  ISAMTOOL
+    7.  NETWARE
+    8.  VREC
+    9.  DBIMPEXP
+   10.  BROWSER
+   11.  MSORT
+   12.  NUMKEYS
+   13.  Clarifications on Filer Network usage
+   14.  NetWare Shell Warning
+   15.  Corrections to the Manual
+
+Subscribers to TurboPower's Fast Update Plan may wish to read the file
+FASTUPD.* (where * is the most recent version number, e.g.,
+FASTUPD.541), which summarizes the changes made during the most recent
+version update.
+
+We have now released the third edition of the B-Tree Filer manual. It
+incorporates all known corrections and enhancements contained in Filer
+versions up through 5.23, with the exception of notes regarding
+support for Microsoft Windows, which are still found in this file. If
+you are receiving this version of B-Tree Filer as an update and would
+like to purchase a copy of the third edition manual, you may do so for
+$25. Add $5 for airmail shipping within the U.S. and Canada, or $10
+elsewhere. Please supply your serial number when ordering. Call
+TurboPower at 800-333-4160 (U.S. and Canada), 719-260-9136
+(elsewhere), or 719-260-7151 (fax).
+
+
+1.  Compiler Version Support
+=====================================================================
+As of version 5.40, B-Tree Filer can be used with any of the following
+versions of Turbo Pascal:
+
+   Turbo Pascal 5.0
+   Turbo Pascal 5.5
+   Turbo Pascal 6.0
+   Turbo Pascal 7.0
+   Borland Pascal 7.0
+   Turbo Pascal for Windows 1.0
+   Turbo Pascal for Windows 1.5
+
+When using Borland Pascal 7.0, B-Tree Filer can be compiled for real
+mode, DOS protected mode, or Windows targets.
+
+The B-Tree Filer units compensate internally for different compiler
+versions and target environments by the use of conditionally defined
+code. Conditional logic and defines in the BTDEFINE.INC file are used
+to get the appropriate behavior. If you have upgraded to this version
+of B-Tree Filer from an earlier version, be certain that you are using
+the most recent version of BTDEFINE.INC, or you will run into
+compilation problems.
+
+The operation of the database-related units (FILER, VREC, REORG,
+REBUILD, VREORG, VREBUILD, FIXTOVAR, ISAMTOOL) is identical regardless
+of the target environment. Only the network-specific units NETWARE and
+NETBIOS are used differently in DOS real mode versus DOS protected
+mode or Windows. See the following section for differences in the
+various target environments.
+
+
+2.  DOS Protected Mode and Windows Support
+=====================================================================
+With one exception, all production units of B-Tree Filer are now
+compatible with DOS real mode, DOS protected mode, and Windows
+operation. The one exception is the BROWSER unit, which is not
+compatible with Windows. However, a Windows-compatible file browser is
+provided as a BONUS unit: see OBROWSE.LZH on the BONUS disk. This
+archive contains documentation for the browser as well as sample
+applications based on the browser and Borland's ObjectWindows Library.
+
+The following subsections describe issues that arise when using
+various Filer units under Windows or DOS protected mode. DOS protected
+mode is abbreviated as DPMI in the following.
+
+FILER
+-----
+A new unit BASESUPP is used internally to route MsDos calls to the
+appropriate DOS, DPMI, or Windows routines.
+
+Due to the increased amount of heap space available to Windows or DPMI
+programs, you must rethink the memory-related parameters you pass to
+<BTInitIsam>. If, for example, you passed the value 0 for the Free
+parameter and there were 10 megabytes of free heap space (some of it
+possibly provided by virtual memory disk space), then <BTInitIsam>
+would spend an extremely long time allocating all of this space and
+you wouldn't end up with significantly improved B-Tree performance
+anyway.
+
+Under Windows, it's generally best to ask <BTInitIsam> for a fixed
+size page buffer, as shown in the following example:
+
+  Pages := BTInitIsam(WhateverNet, MemAvail-500000, 0);
+
+This call would allocate 500,000 bytes of heap space for the page
+buffers.
+
+EMS is not supported under either Windows or DPMI, so you should pass
+0 for the last parameter to BTInitIsam in this situation, however the
+parameter will be ignored if you do not.
+
+When running multiple FILER-based tasks under Windows, it's best to
+use the MsNet network model. SHARE.EXE (provided with DOS) must be
+loaded before starting Windows. FILER automatically gives each window
+a unique "workstation number" when it opens a fileblock already opened
+by another window.
+
+NETWARE
+-------
+In order to make calls to the Novell NetWare API while running under
+Windows or DPMI, the NETWARE unit must be able to allocate memory for
+use in real mode (memory in the first megabyte of address space). This
+real mode memory is a limited resource. Please see the discussion of
+real mode memory in the documentation for the WINDPMI unit, later in
+this file.
+
+In addition to the NETWARE unit itself, the NETSEMA unit and the two
+BONUS units NETBIND and NETQUE have also been modified to support
+Windows and DPMI. There have been no changes to the interface or
+calling sequence of any of the routines in those BONUS units.
+
+The routines in the NETWARE unit will not work with Windows' Real
+mode. They are compatible with both Windows Standard and 386 Enhanced
+mode, as well as DPMI.
+
+To use Novell's NetWare and its associated API calls with Windows, you
+will need Windows 3.0a or greater. NetWare does not work well with
+Windows 3.00. Novell recommends a minimum version of IPX 3.04 and
+NetWare shell version 3.22 or greater. These versions can be
+downloaded from CompuServe or obtained from Novell.
+
+The following example programs that use the NETWARE unit have been
+updated to compile and run under real mode DOS, DPMI, and Windows:
+
+  NETINFO
+  MESEXAMP
+
+The sample programs NSEND and NRECEIVE, required many changes since
+they rely heavily on network transfer protocols. Versions of these
+programs that run under Windows or DPMI have been provided in the
+files NSENDW.PAS and NRECEIVW.PAS.
+
+The following new types, constants and variables have been added when
+compiling NETWARE for Windows or DPMI:
+
+const
+  DPMIErrorVal  = $AA;   {returned when a DPMI service request failed}
+
+For functions in the NetWare unit that return a byte error code, the
+new error code $AA will be returned for errors caused by failure of a
+DPMI call (usually due to insufficient real mode memory).
+
+type
+  Registers = TRegisters;
+
+This type is defined to save us the trouble of changing every routine
+using the Registers type, which has been renamed to TRegisters in
+TPW's WinDos unit.
+
+var
+  NoESR : UserESRType absolute NilPtr;
+
+This is a predefined do-nothing Event Service Routine.
+
+There is no change to the interface of any routines in the NETWARE
+unit except the IPX and SPX calls. A discussion of the changes to IPX
+and SPX routines follows.
+
+IPX/SPX
+-------
+When using the IPX and/or SPX routines in the NETWARE unit under
+Windows or DPMI, an additional DLL called IPXSPXD.DLL is used. The
+source to this DLL is contained within the source file IPXSPXD.PAS.
+Windows or the Borland DPMI runtime manager will load the DLL if and
+when it needs to, provided IPXSPXD.DLL is in the Windows directory,
+the Windows System directory, the current directory, or on the DOS
+path. Your program does not need to reference this DLL, since the
+NETWARE unit knows how to load and use it.
+
+The following types have been added to support IPX/SPX under Windows
+and DPMI:
+
+  WinIPXRec =
+    record
+      wirP, wirR : IPXRecPtr;
+    end;
+
+This record type replaces the IPXRec in most IPX calls. It contains
+both real and protected mode pointers to an IPXRec. A variable of this
+type is initialized with a call to AllocateWinIPXRec and disposed with
+a call to FreeWinIPXRec.
+
+  AESECBPtr = ^AESECB;
+
+A pointer to an AESECB.
+
+  WinAESECB =
+    record
+      AESECBR, AESECBP : AESECBPtr;
+    end;
+
+This record type replaces the AESECB in IPXScheduleEvent and
+IPXScheduleSpecialEvent. It contains both real and protected mode
+pointers to an AESECB. A variable of this type is initialized with a
+call to AllocateWinAESECB and disposed of with a call to
+FreeWinAESECB.
+
+  WinSPXPoolRec =
+    record
+      prR, prP : SPXPoolRecPtr;
+    end;
+
+This record type replaces the SPXPoolRec in certain SPX calls. It
+contains both real and protected mode pointers to an SPXPoolRec. This
+is a component of the WinSPXRec. The WinSPXPoolRec is allocated and
+maintained when you call SPXEstablishConn or SPXListenForConn. You
+need to pass a WinSPXPoolRec directly to certain pool management SPX
+routines. Assuming we have a WinSPXRec called Event, the following
+code shows how you would pass the WinSPXPoolRec field to a call to
+SPXPoolCancelAll:
+
+  SPXPoolCancelAll(Event.wsrP^.PoolRec);
+
+
+  WinSPXRec =
+    record
+      wsrR, wsrP : SPXRecPtr;
+    end;
+
+This record type replaces the SPXRec in most SPX calls. It contains
+both real and protected mode pointers to an SPXRec. A variable of this
+type is initialized with a call to AllocateWinSPXRec and disposed of
+with a call to FreeWinSPXRec.
+
+  UserESRType = procedure (var SPXEvent : WinSPXRec;
+                           CompletionCode : Byte;
+                           PoolIndex : Byte;
+                           DataType : Byte;
+                           DataPtr : Pointer);
+
+This is the procedure type used for event service routines written in
+TPW or DPMI.
+
+  WinESRType =
+    record
+      Regs     : DPMIReg;
+      PoolPtr  : SPXPoolRecPtr;
+      CallBack : Pointer;
+      UserESR  : UserESRType;
+      DataSegm : Word;
+    end;
+
+This record structure contains information needed to allow
+applications running under Windows or DPMI to have SPX Event Service
+Routines. A procedure of type UserESRType is associated with a
+WinESRType variable through a call to AllocateWindowsESR.
+
+The following new routines have been added to the NETWARE unit:
+
+function AllocateWinIPXRec(DataSize : Word;
+                           var Event : WinIPXRec) : Boolean;
+  {-Allocates a WinIPXRec which contains pointers to an IPXRec
+    addressable in both real and protected modes. Also allocates space
+    for the data addressable in real mode. You must call these
+    routines to initialize a variable of type WinIPXRec before passing
+    that variable to the other IPX routines.}
+
+procedure FreeWinIPXRec(Event : WinIPXRec);
+  {-Frees a WinIPXRec previously allocated with AllocateWinIPXRec. The
+    event associated with this WinIPXRec must be completed or
+    cancelled before this procedure is called.}
+
+function AllocateWinSPXRec(var WSR : WinSPXRec) : Boolean;
+  {-Allocates a WinSPXRec which contains pointers to an SPXRec
+    addressable in both real and protected modes. Also allocates space
+    for the data addressable in real mode. You must call these
+    routines to initialize a variable of type WinSPXRec before passing
+    that variable to the other SPX routines.}
+
+function AllocateWinAESECB(DataSize : Word;
+                           var ECB : WinAESECB) : Boolean;
+  {-Allocates a WinAESECB which contains pointers to an AESECB
+    addressable in both real and protected modes. Also allocates space
+    for the data addressable in real mode.}
+
+procedure FreeWinAESECB(ECB : WinAESECB);
+  {-Frees a WinAESECB previously allocated with AllocateWinAESECB. The
+    event associated with this WinAESECB must be completed or
+    cancelled before this procedure is called.}
+
+procedure FreeWinSPXRec(WSR : WinSPXRec);
+  {-Frees a WinSPXRec previously allocated with AllocateWinSPXRec. The
+    event associated with this WinSPXRec must be completed or
+    cancelled before this procedure is called.}
+
+function AllocateWindowsESR(EventServiceRoutine : UserESRType;
+                            DataSegment : Word;
+                            var WindowsESR : WinESRType) : Boolean;
+  {-Requests a real mode callback and initializes the data structures
+    needed to support ESRs in WinApps.}
+
+procedure FreeWindowsESR(var WindowsESR : WinESRType);
+  {-Free a real mode callback previously allocated with a call to
+    AllocateWindowsESR.}
+
+The interface to many of the existing IPX/SPX routines has been
+modified to support Windows and DPMI. The following list shows each
+changed high level routine showing the new parameters:
+
+function IPXCancelEvent(IPXEvent : WinIPXRec) : Byte;
+
+function IPXEventComplete(IPXEvent : WinIPXRec;
+                          var FinalResult : Byte) : Boolean;
+
+function IPXListen(IPXEvent : WinIPXRec;
+                   Socket : Word;
+                   WaitForCompletion : Boolean;
+                   MaxPacketSize : Word;
+                   var DataPacket) : Byte;
+
+function IPXSend(IPXEvent : WinIPXRec;
+                 Receiver : IPXAddress;
+                 Socket : Word;
+                 WaitForCompletion : Boolean;
+                 DataPacketSize : Word;
+                 var DataPacket) : Byte;
+
+procedure IPXScheduleEvent(DelayTime : Word; ECB : WinIPXECB);
+
+procedure IPXScheduleSpecialEvent(DelayTime : Word;
+                                  ECB : WinAESECB);
+
+procedure SPXAbortConn(SPXEvent : WinSPXRec);
+
+function SPXEstablishConn(var SPXEvent : WinSPXRec;
+                          Receiver : IPXAddress;
+                          Socket : Word;
+                          WaitForCompletion : Boolean;
+                          MaxListenDataSize : Word;
+                          NumListenPoolECBs : Byte;
+                          PoolESRInPascal : Pointer) : Byte;
+
+function SPXEventComplete(SPXEvent : WinSPXRec;
+                          var FinalResult : Byte;
+                          var DataType : Byte) : Boolean;
+
+function SPXListenForConn(var SPXEvent : WinSPXRec;
+                          Socket : Word;
+                          WaitForCompletion : Boolean;
+                          MaxDataSize : Word;
+                          NumPoolECBs : Byte;
+                          PoolESRInPascal : Pointer) : Byte;
+
+procedure SPXPoolStartListening(var PoolRec : WinSPXPoolRec);
+
+function SPXListenCount(SPXEvent : WinSPXRec) : Byte;
+
+function SPXListenPooled(SPXEvent : WinSPXRec;
+                         var CompleteCode : Byte;
+                         var PoolIndex : Byte;
+                         var DataType : Byte;
+                         var DataPtr : Pointer) : Boolean;
+
+function SPXPoolCancelAll(PoolRec : WinSPXPoolRec) : Boolean;
+
+function SPXPoolECBPtr(PoolRec : WinSPXPoolRec;
+                       PoolIndex : Byte) : ECBPtr;
+
+function SPXPoolDataPtr(PoolRec : WinSPXPoolRec;
+                        PoolIndex : Byte) : Pointer;
+
+procedure SPXReplenishPool(SPXEvent : WinSPXRec; PoolIndex : Byte);
+
+procedure SPXReplenishAll(SPXEvent : WinSPXRec);
+
+procedure SPXSend(SPXEvent : WinSPXRec;
+                  WaitForCompletion : Boolean;
+                  DataType : Byte;
+                  DataPacketSize : Word;
+                  DataPacket : Pointer);
+
+procedure SPXTerminateConn(SPXEvent : WinSPXRec);
+
+Many of the IPX/SPX routines include a WaitForCompletion option,
+meaning that the procedure will not wait for completion of the
+requested event. When WaitForCompletion is False, the WinIPXRec or
+WinSPXRec must reside in static memory for the life of the event. In
+other words, you couldn't have a local variable for the WinIPXRec or
+WinSPXRec unless you could assure that the procedure in which that
+variable was declared was not exited until the event was complete.
+Windows and DPMI add an additional complication to this rule. Since
+NetWare is implemented as a TSR running in real mode underneath
+Windows or DPMI, the memory must not only be static for the life of
+the call, but it must be addressable in both real and protected mode.
+The new routines AllocateWinIPXRec and AllocateWinSPXRec deal with
+this issue.
+
+AllocateWinIPXRec and AllocateWinSPXRec are used to allocate memory
+for the event record addressable in both real and protected mode, and
+FreeWinIPXRec and FreeSPXRec are used to free that memory. It is very
+important to free the memory allocated with these routines by calling
+FreeWinIPXRec or FreeWinSPXRec when you are finished with a given
+event record. At the same time, it is critical that you do not free
+that memory until the event associated with that event record has been
+completed (or explicitly cancelled).
+
+SPX Event Service Routines
+--------------------------
+Upon completion of an SPX event, a user provided routine can be called
+automatically. This routine is called an Event Service Routine (ESR).
+When compiling under TPW, you must first declare a variable of type
+WinESRType. Then this variable must be initialized using
+AllocateWindowsESR. This WinESR variable is then passed to
+SPXEstablishConn or SPXListenForConn. When an SPX packet is received
+by one of the ECBs in the listening pool, the routine passed to
+AllocateWindowsESR will be called.
+
+The following code fragment shows the declaration of a Windows ESR and
+the calls needed to use it:
+
+var
+  ListenESR : WinESRType;
+
+  procedure OurESR(var Event : WinSPXRec; CompletionCode : Byte;
+                   PoolIndex : Byte; DataType : Byte;
+                   DataPtr : Pointer); Far;
+  begin
+  end;
+
+begin
+  ...
+  if not AllocateWindowsESR(OurESR, DSeg, ListenESR) then
+    Abort('Unable to allocate real mode callback');
+  Ret := SPXListenForConn(Event, LSocket, False, DataSize,
+                          NumECBs, ListenESR);
+
+Note the declaration of OurESR. Your ESR must have identical
+parameters, and it must be a FAR, global procedure.
+
+Even if you do not require your own ESR, you must still declare a
+variable of type WinESR and make a call to AllocateWindowsESR. For the
+EventServiceRoutine parameter, specify the predefined variable NoESR.
+
+The reason you must declare and allocate a WinESR even if you do not
+need an ESR is because the NETWARE unit needs to use the ESR to manage
+the ECB pools. Under DOS, this is handled transparently. Under
+Windows, data contained within the WinESR and initialized by
+AllocateWindowsESR is critical to the operation of the ESR.
+
+Note: A given WinESR variable may be used with only one call to
+SPXEstablishConn or SPXListenForConn at a time. This is because the
+WinESR contains internal pointers back to the associated WinSPXEvent.
+This is necessary to allow the ESR to "find its way" back from real
+mode into protected mode and call the appropriate protected mode Event
+Service Routine.
+
+When your ESR is called, Windows is in a critical section. While in a
+critical section, Windows cannot multitask. Therefore you should exit
+your ESR as quickly as possible. (Because DOS DPMI is not
+multi-tasking, this issue is not so important under DPMI.
+Nevertheless, the ESR is an event service routine and it should exit
+as quickly as possible.)
+
+When you are finished with a variable of type WinESR, it is important
+to dispose of it with a call to FreeWindowsESR. You must be careful to
+ensure the events associated with the ESR are really complete or have
+been explicitly cancelled. If you call FreeWindowsESR while the
+associated ESR is still active, you will get a DPMI or Windows UAE or
+system hang if the ESR is called.
+
+NETBIOS
+-------
+When compiled under Windows or DPMI, the NETBIOS unit requires a DLL
+called NETBIOSD.DLL. The source to NETBIOSD.DLL is implemented in
+NETBIOSD.PAS. Windows or the Borland DPMI runtime manager will load
+the DLL if and when it needs to, provided NETBIOSD.DLL is in the
+Windows directory, the Windows System directory, the current
+directory, or on the DOS path. Your program does not need to reference
+this DLL, since the NETBIOS unit knows how to load and use it.
+
+In order to make calls to the NetBIOS API, the NETBIOS unit must be
+able to allocate memory for use in real mode (memory in the first
+megabyte of address space). This real mode memory is a limited
+resource. Please see the discussion of real mode memory in the
+documentation for the WINDPMI unit.
+
+The routines in the NETBIOS unit will not work in Windows Real mode.
+
+The following example programs that use the NETBIOS unit have been
+updated to compile and run under both DOS, DPMI, and Windows:
+
+  NETINFO
+  MESEXAMP
+
+The sample programs NSEND and NRECEIVE, required many changes since
+they rely heavily on network transfer protocols. Versions of these
+programs for DPMI or Windows have been provided in the files
+NSENDW.PAS and NRECEIVW.PAS.
+
+The following new types have been added when compiling with TPW:
+
+  WinNCB =
+    record
+      NR, NP : NCBPtr;
+    end;
+
+This record type holds both real and protected mode pointers to an
+NCB. A variable of this type must be initialized with AllocateWinNCB
+and disposed with FreeWinNCB.
+
+  WinNCBPtr = ^WinNCB;
+
+A pointer to a WinNCB.
+
+  NetBiosPostRoutine = procedure(LastError : Byte; N : WinNCBPtr);
+
+This procedure type defines NetBIOS post routines for use in Windows
+applications.
+
+  WinPostType =
+    record
+      Regs     : DPMIReg;
+      Post     : NetBiosPostRoutine;
+      CallBack : RealModeCallbackProc;
+      NCBs     : WinNCBPtr;
+    end;
+
+This record holds various information needed for the NETBIOS unit to
+allow NetBIOS post routines while running under Windows. A variable of
+this type is passed to all the NetBIOS functions with NoWait options.
+A variable of this type must be initialized with a call to
+GetWindowsPostRoutine or filled with zeros if no post routine is
+desired. When you have finished with it, it is disposed with a call to
+FreeWindowsPostRoutine.
+
+The following new routines have been added. The use of these routines
+will be explained later in the text.
+
+function GetWindowsPostRoutine(ProtectedProc : NetBiosPostRoutine;
+                               DataSegment : Word;
+                               var WinPost : WinPostType) : Boolean;
+  {-Request a real mode callback for NetBIOS post routines}
+
+procedure FreeWindowsPostRoutine(var WinPost : WinPostType);
+  {-Free a real mode callback for NetBIOS post routines}
+
+function AllocateWinNCB(var N : WinNCB) : Boolean;
+  {-Allocate memory for NCB for use under Windows}
+
+procedure FreeWinNCB(N : WinNCB);
+  {-Free memory for NCB for use under Windows}
+
+When compiling under TPW, the following routines have a slightly
+different interface than their DOS counterparts:
+
+function NetBiosSend(SessionLSN : Byte;
+                     PacketSize : Word;
+                     Packet : Pointer) : Byte;
+
+function NetBiosReceive(SessionLSN : Byte;
+                        PacketSize : Word;
+                        Packet : Pointer) : Byte;
+
+procedure NetBiosReceiveNoWait(SessionLSN : Byte;
+                               PacketSize : Word;
+                               var PostEvent  : WinPostType;
+                               var N : WinNCB;
+                               Packet : Pointer);
+
+procedure NetBiosSendNoWait(SessionLSN : Byte;
+                            PacketSize : Word;
+                            var PostEvent  : WinPostType;
+                            var N : WinNCB;
+                            Packet : Pointer);
+
+function NetBiosCmdCompleted(var N : WinNCB;
+                             var FinalRetCode : Byte) : Boolean;
+
+function CancelRequest(var N : WinNCB) : Byte;
+
+procedure SendDataGram(var N : WinNCB; SenderNameNum : Byte;
+                       ReceiverName : NBNameStr;
+                       Wait : Boolean;
+                       var PostEvent : WinPostType;
+                       DGSize : Word;
+                       Datagram : Pointer);
+
+procedure ReceiveDataGram(var N : WinNCB;
+                          ReceiverNameNum : Byte;
+                          Wait : Boolean;
+                          var PostEvent : WinPostType;
+                          DGSize : Word;
+                          Datagram : Pointer);
+
+procedure SendBDataGram(var N : WinNCB; SenderNameNum : Byte;
+                        Wait : Boolean;
+                        var PostEvent : WinPostType;
+                        DGSize : Word;
+                        Datagram : Pointer);
+
+procedure ReceiveBDataGram(var N : WinNCB;
+                           ReceiverNameNum : Byte;
+                           Wait : Boolean;
+                           var PostEvent : WinPostType;
+                           DGSize : Word;
+                           Datagram : Pointer);
+
+procedure NetBiosCallNoWait(RemoteName,LocalName : NBNameStr;
+                            SendTimeOut,RecTimeOut : Byte;
+                            var PostEvent : WinPostType;
+                            var N : WinNCB);
+
+procedure NetBiosListenNoWait(RemoteName,LocalName : NBNameStr;
+                              SendTimeOut,RecTimeOut : Byte;
+                              var PostEvent : WinPostType;
+                              var N : WinNCB);
+
+procedure NetBIOSRequest(N : NCBPtr);
+
+Many of the NetBIOS routines include Wait options, meaning that the
+procedure may not wait for completion of the requested event. When
+Wait is False, the NCB must reside in static memory for the life of
+the event. In other words, you couldn't have a local variable for the
+NCB unless you could assure that the procedure in which that variable
+was declared was not exited until the event was complete. DPMI and
+Windows add an additional complication to this rule. Since NetBIOS is
+implemented as a TSR or device driver running in real mode underneath
+Windows or DPMI, the memory must also be addressable in both real and
+protected mode. The new routines AllocateWinNCB and FreeWinNCB deal
+with this issue.
+
+AllocateWinNCB is used to allocate NCB memory addressable in both real
+and protected mode, and FreeWinNCB is used to free that memory. It is
+very important to free the memory allocated with AllocateWinNCB by
+calling FreeWinNCB when you are finished with a given NCB. At the same
+time, it is critical that you do not free that memory until the event
+associated with that NCB has been completed (or explicitly cancelled).
+
+One subtle but important change has been made to all the functions
+that take data packets. In the DOS versions of these routines, the
+parameters Packet and Datagram are untyped variables. In the Windows
+version they are pointers. This change was not made simply to annoy
+you! Because NetBIOS is running in real mode underneath Windows, it
+expects all pointers it receives in function calls to be real mode
+pointers. Since the Windows or DPMI application is running in
+protected mode, it has to use special techniques to make real mode
+memory available. You must use the routine GetRealModeMem (actually a
+function pointer interfaced by the WINDPMI unit-see below) to allocate
+memory that can be addressed by both real and protected mode
+processes. GetRealModeMem returns two pointers, one usable in real
+mode, the other in protected mode. When referencing the memory from
+your Windows application, you use the protected mode pointer
+exclusively. The only time you use the real mode pointer is when
+making a call to any NetBIOS function. The following example should
+help clarify:
+
+uses
+  WinDPMI, NetBIOS;
+
+var
+  SR, SP : ^String;
+  ...
+
+begin
+  if not GetRealModeMem(SizeOf(String), Pointer(SR), Pointer(SP)) then
+  begin
+    WriteLn('Insufficient real mode memory.');
+    Halt;
+  end;
+  SP^ := 'This pointer has been assigned in protected mode, for real!';
+
+  {assume SendN, NameNo, NBName, and SendPost are initialized}
+  SendDatagram(SendN, NameNo, NBName, False, SendPost,
+               SizeOf(String), SR);
+
+  {assure event completes}
+  FreeRealModeMem(Pointer(SP));
+
+In this example, we allocate the memory for SR and SP with
+GetRealModeMem. Then we initialize the string using the protected mode
+pointer SP. Finally, we make the call to SendDatagram to send this
+string, passing the real mode pointer. This issue may seem confusing,
+but the rule is simple: when using a pointer in your program, use the
+protected mode pointer, when passing the pointer to NetBIOS, pass the
+real mode pointer. If you get this wrong, you will get either an UAE
+or a bogus message sent via NetBIOS. Study the NBCHATW program found
+in the BONUS directory for more examples of using real and protected
+mode pointers.
+
+You will notice that all the NetBIOS routines that have a NoWait
+option take a parameter of type WinNCB. WinNCB is a record type
+containing both a real mode and a protected mode pointer to a block of
+memory addressable in both modes. This memory is allocated by
+AllocateWinNCB.
+
+See the sample program NBCHATW.PAS for an example of how
+AllocateWinNCB and FreeWinNCB are used in a Windows application.
+
+The NETBIOS unit supports NetBIOS Post routines for the NoWait
+procedures. Post routines are routines that are called automatically
+upon completion of the associated event. Again Windows and DPMI
+complicate matters because NetBIOS expects the post routines to be
+real mode procedures, but the Windows application is running in
+protected mode (if Windows is in Standard or 386 Enhanced mode). Two
+routines have been added to deal with this: GetWindowsPostRoutine and
+FreeWindowsPostRoutine.
+
+To use the NoWait NETBIOS routines, you need to declare a variable of
+type WinPostType. Before making the call to the NoWait routine, you
+must first either use GetWindowsPostRoutine to initialize the
+WinPostType or you must initialize the WinPostType to 0 with FillChar
+to indicate no post routine is desired. When calling
+GetWindowsPostRoutine, you must provide a variable of type WinPostType
+and a procedural parameter of type NetBiosPostRoutine. A
+NetBiosPostRoutine is a FAR, global procedure declared as follows:
+
+  procedure MyPostRoutine(LastError : Byte; N : WinNCBPtr); Far;
+
+The name of the procedure is not important (you may use any name you
+like), but the parameters must exactly match those shown. TPW or BP7
+will generate a compiler error on the call to GetWindowsPostRoutine if
+the post routine is declared incorrectly.
+
+Also passed to GetWindowsPostRoutine is a DataSegment value. This is
+the protected mode data segment selector that will be put in the DS
+register just before your post routine is activated. Typically you
+should pass DSeg for this parameter.
+
+Note: A given variable of type WinPostType may be associated with only
+one active NetBIOS call at a time. This is because the WinPostType has
+a field used internally that points back to the NCB for the associated
+event.
+
+When your Post routine is called, Windows is in a critical section.
+While in a critical section, Windows cannot multitask. Therefore you
+should exit your Post routine as quickly as possible. (Because DOS
+DPMI is not multi-tasking, this issue is not so important under DPMI.
+Nevertheless, the post routine is an event service routine and it
+should exit as quickly as possible.)
+
+When the NetBIOS event associated with a given post routine completes,
+your procedure will be called automatically. It receives as parameters
+the final error code for the event in LastError, and a pointer to the
+WinNCB in N. A typical NetBIOS post routine will queue the data for
+processing and resubmit the NCB for listening. The following post
+routine is taken from the one in the NBCHATW program:
+
+  procedure PostRoutine(LastError : Byte; N : WinNCBPtr); Far;
+  begin
+    if Exiting then Exit;
+    Pending := True;
+    if LastError = 0 then
+      Msg := SP^
+    else
+      Msg := 'NetBIOS error = ' + HexB(LastError) + 'h';
+    ReceiveDatagram(N^, NBNameNo, False, Post, SizeOf(String), SR);
+  end;
+
+First, it checks the global variable Exiting to see if the program has
+begun shutting itself down. If it is shutting down, the post routine
+exits immediately. If not, it sets the global flag Pending to true to
+inform the main message loop that an incoming string is waiting in the
+string variable Msg. If no error occured, the incoming string is taken
+from the data buffer (in this case a string pointer called SP). Then
+the NCB is resubmitted to NetBIOS to listen for the next datagram.
+
+Note the two global variables SR and SP. These are both string
+pointers that point to the same memory. However, SP is a protected
+mode pointer (selector:offset) and SR is a real mode pointer
+(segment:offset). When processing the string in protected mode (as is
+the case within our PostRoutine procedure), you must use the protected
+mode pointer. When submitting the pointer to a real mode API call (as
+in the call to ReceiveDatagram), you must pass the real mode pointer.
+
+It is essential that you dispose of any variables allocated with
+AllocateWinNCB and GetWindowsPostRoutine when you are finished with
+them. Care must be taken when disposing of these routines to ensure
+that the events associated with them are really complete. If they are
+not, the application will probably generate a UAE (unrecoverable
+application error). Failure to dispose of these resource when done
+will lead to insufficient real mode memory for other processes or
+programs. See the routine NBExitProc in the NBCHATW program for an
+example of how to safely ensure that variables are properly shutdown
+and disposed.
+
+SHARE
+-----
+In order to make calls to the certain routines in the SHARE unit, the
+unit must be able to allocate memory for use in real mode (memory in
+the first megabyte of address space). This real mode memory is a
+limited resource. Please see the discussion of real mode memory in the
+documentation for the WINDPMI unit.
+
+There is no change to the interface of any routines in the SHARE unit
+when using them under TPW.
+
+The routines in the SHARE unit work in standard and 386 Enhanced mode
+of Windows as well as DOS DPMI. Windows real mode is not supported.
+
+WINDPMI
+-------
+The WINDPMI unit is new to B-Tree Filer as of version 5.23. It is used
+by other units when they are being compiled under TPW or BP7 DPMI. The
+WINDPMI unit interfaces various routines relating to the DOS Protected
+Mode Interface (DPMI) API.
+
+The DPMI specification 0.9 is supported by Microsoft Windows 3 and by
+the DPMI servers supported by Borland Pascal 7.0. This specification
+defines routines that allow programs running in protected mode to
+communicate with real mode TSRs and device drivers. The DPMI spec also
+provides an API for real mode programs to allocate extended memory and
+operate in protected mode.
+
+The WINDPMI unit allows protected mode applications to communicate
+with real mode TSRs and device drivers. This is necessary to make
+calls to underlying network operating systems such as NetWare,
+NetBIOS, and MS-NET redirector calls.
+
+With the exception of one important facility, the routines in the
+WINDPMI unit are not documented (beyond the comments in the source).
+The one documented facility is discussed below under the heading
+Real Mode Memory Hooks.
+
+The WINDPMI unit will compile under TPW or BP7 protected mode only. It
+will not compile under DOS versions of Turbo Pascal. While some DPMI
+calls make sense for Dos applications, the purpose of this unit is to
+provide services to Windows and DPMI applications.
+
+Real Mode Memory Hooks
+----------------------
+The first megabyte of memory in PC compatible computers is accessible
+to any member of the 8086 family of microprocessors in real mode. This
+is the mode that MS-DOS/PC-DOS runs under. Starting with the 80286, a
+new mode called protected mode is available. In this mode, memory
+beyond the first megabyte is addressable. In protected mode, regions
+of memory are "protected" by the CPU hardware against unauthorized
+access. In other words, only programs that have been granted
+sufficient access rights to a region of memory may access it.
+
+When Microsoft Windows is operating in its standard or 386 enhanced
+modes, it is using the CPU in protected mode. This poses some problems
+when run on top of DOS, which works in real mode. It is beyond the
+scope of this text to explain all the issues, but there is one area
+where an understanding of the problem is required to make use of the
+tools provided in the NETWARE, NETBIOS, and SHARE units.
+
+When a program operating in protected mode needs to make a call to a
+service provided by a DOS TSR or device driver operating in real mode,
+certain strict rules must be followed. Memory in the PC is addressed
+differently for real mode and protected mode. Code executing in real
+mode can only access memory within the first megabyte of storage
+space. Code executing in protected mode can only access memory for
+which it has access permission. This poses some intriguing problems!
+
+The bottom line is that Windows and DPMI provide routines that allow
+the allocation of real mode memory, and routines to allow protected
+mode programs to be granted permission to access it. The one catch is
+that real mode memory is a limited resource. To be able to use it
+reliably, you need to ensure that sufficient real mode memory will be
+available to a program needing it.
+
+This is where the WINDPMI unit comes in. It interfaces two procedural
+parameters: GetRealModeMem and FreeRealModeMem. By default, these
+point to routines that use the Windows API calls GlobalDosAlloc and
+GlobalDosFree (which are also emulated by Borland's DPMI runtime
+manager). Provided that sufficient real mode memory exists at the time
+of these calls, the default configuration works fine.
+
+As mentioned before, real mode memory is a scarce resource. There is
+nothing keeping Windows from using the little memory there is
+available below one megabyte for its own use. The reason for the hooks
+in WINDPMI is to facilitate the writing of a DLL to be loaded by
+Windows automatically that grabs some chunk of real mode memory and
+partitions it out to WINDPMI users as needed.
+
+
+3.  Conditional Defines and Compiler Directives
+=====================================================================
+As of version 5.40, only three network-related defines are offered in
+BTDEFINE.INC. These are:
+
+  {$DEFINE NoNet}
+  {.$DEFINE Novell}
+  {.$DEFINE MsNet}
+
+See the following section for additional information.
+
+The defines DebugEMSHeap, NoErrorCheckEMSHeap, and ManualInitEMSHeap
+have been moved from BTDEFINE.INC into EMSHEAP.PAS, which is the only
+unit they affect.
+
+BTDEFINE.INC defines a new symbol named Btree54. This symbol can be
+used by utilities that build on B-Tree Filer to detect the new
+behavior of the 5.4 version. The symbol Btree52 is also still defined.
+
+The following defines are defined when appropriate in BTDEFINE.INC and
+used internally by units to provide appropriate code for each
+supported version of the Turbo Pascal compiler: DPMIOrWnd, Heap6,
+CanAllowOverlays, and CanSetOvrflowCheck.
+
+
+4.  FILER
+=====================================================================
+As of version 5.40, workstation numbering has been redesigned to be
+network independent. There is no longer an IsamWSNr variable; the
+workstation number is always determined automatically on a
+per-fileblock basis. A maximum of MaxNrOfWorkStations users can open
+any given fileblock. Call the new function BTGetInternalDialogID to
+get the effective workstation number for a given fileblock. This
+dialog ID number is obtained by placing a single byte lock at a large
+phantom offset into the DIA file; each workstation locks a unique byte
+until MaxNrOfWorkstations all have a lock and no more can be obtained.
+Note that this lock remains in place continuously until the fileblock
+is closed.
+
+NetSupportType now contains only the values NoNet, Novell, and MsNet.
+Similarly, the only defines allowed in BTDEFINE.INC are NoNet, Novell,
+and MsNet. These values now determine the behavior of the locking
+calls and they have no effect on workstation numbering. NoNet means
+that locking is ignored, Novell uses NetWare-specific locks, and MsNet
+uses generic DOS locks. It is safe to use MsNet for any PC-based
+network, including Novell, although the Novell locking calls are more
+efficient.
+
+The algorithm used for automatic locking retries has been improved.
+For Novell locking, FILER takes advantage of NetWare services to retry
+automatically. For MsNet locking, FILER retries the locks itself. The
+IsamRetriesForLock typed constant is now gone. Instead, FILER provides
+the typed constant IsamLockTimeOut, which is the total number of
+milliseconds to retry any lock (default 768 ms). For fileblock locks,
+FILER retries for a longer period, by a factor of
+IsamFBLockTimeOutFactor, which defaults to 4 (hence, fileblock locks
+are retried automatically for about 3 seconds). The BTIsamLockRecord
+function's parameters were changed to pass TimeOut and DelayTime
+parameters to control the retry behavior. The IsamDelayBetwLocks typed
+constant still specifies the number of milliseconds to delay between
+lock attempts. A new bonus program, TRAFFIC, can be used to optimize
+these timing parameters for your situation. See TRAFFIC.LZH on the
+BONUS disk.
+
+Internal locking behavior for fileblock locks has been changed
+slightly to reduce lock thrashing on heavily loaded networks. One side
+effect of this change may be important in your applications. In
+earlier versions, if one station had a write lock on a fileblock, it
+could convert this lock to a readlock (by calling BTReadLockFileBlock)
+without checking for errors. This is no longer the case, especially on
+Novell networks where server lock queueing is supported.
+
+The new routine BTInformTTSAbortSuccessful replaces the old routine
+BTDestroyBufferContents. It is used to inform the FILER unit that a
+NetWare TTS abort was completed on a particular fileblock.
+
+The new routines BTGetNextUsedAddRecRef and
+BTGetAfterNextUsedAddRecRef return the data reference number of the
+next record added and the number of the record added after that,
+respectively. If you use these routines in a network setting, be sure
+to lock the fileblock before calling them; otherwise the number
+returned may be changed by another workstation.
+
+BTDeleteRec now returns error 10135 if an attempt is made to delete a
+record larger than the total number of records in the file. It still
+returns 10135 if an attempt is made to delete record 0.
+
+The methodology for adding a new network type to FILER is now somewhat
+different. However, with the new methodology for determining
+"workstation numbers", it is less likely that you'll need to add a new
+network type. Call TurboPower for details if you find a need to do
+this.
+
+When using FILER fileblocks in concert with Novell TTS (transaction
+tracking system), do not mark the dialog file transactional. In some
+situations, this prevents a call to TTSEnd from actually ending the
+transaction.
+
+A few users of the FILER unit have reported that the DR DOS SHARE
+utility does not correctly emulate MS-DOS SHARE. According to these
+reports, workstations running DR DOS do not work correctly with B-Tree
+Filer when it is running as an MsNet network. If you have any insights
+into this issue we would be pleased to hear them.
+
+See the text file named ERRORS. in the Filer directory for an
+up-to-date list of the error codes used by the FILER unit.
+
+Here are the declarations of new or changed types, constants, and
+procedures in the FILER unit:
+
+const
+  MaxNrOfWorkStations : Word = 50;
+
+MaxNrOfWorkStations is now a typed constant and can be modified at
+runtime. Its value for a given run of the program _must_ be set
+before BTInitIsam is called, and hence must be the same for all the
+fileblocks opened by B-Tree Filer. Its value can be between 1 and
+65534. Please note that if the value is changed, the dialog files
+(whose sizes are dependent on MaxNrOfWorkStations) must be deleted
+and rebuilt for each fileblock.
+
+const
+  IsamFBLockTimeOutFactor : Word = 4;
+
+Multiplier of IsamLockTimeOut for fileblock locks.
+
+const
+  IsamLockTimeOut : Word = 768;
+
+Maximum total time (in milliseconds) spent retrying a read lock or a
+record lock. Fileblock locks are retried for up to
+IsamFBLockTimeOutFactor*IsamLockTimeOut milliseconds.
+
+const
+  TestNetExistance : Boolean = True;
+
+If true, BTInitIsam will check whether the network specified in the
+ExpectedNet parameter exists or not; if the network is not found,
+BTInitIsam will fail. If this typed constant is false, no check is
+made for the network, it is assumed to be present.
+
+const
+  InheritFileHandles = False;
+
+This constant determines whether any child processes will inherit the
+B-Tree Filer fileblock handles or not. Note that, if true, the child
+process will only inherit the file handles, it will not inherit any of
+the B-Tree Filer data structures from the parent. The default is
+false to comply with the behavior of previous versions of Filer.
+
+type
+  NetSupportType = (NoNet, Novell, MsNet);
+
+Supported locking methods.
+
+Declaration
+  function BTGetAfterNextUsedAddRecRef(IFBPtr : IsamFileBlockPtr) : LongInt;
+Purpose
+  Return the reference number that will be assigned to the record
+  added after the next record is added.
+Description
+  This routine is primarily for internal use.
+See Also
+  BTGetNextUsedAddRecRef
+
+Declaration
+  function BTGetInternalDialogID(IFBPtr : IsamFileBlockPtr) : Word;
+Purpose
+  Return the internal ID number used for network access to this
+  fileblock.
+Description
+  The number returned by this function is analogous to the IsamWSNr
+  variable in previous versions of FILER. For NoNet access to a
+  fileblock, BTGetInternalDialogID always returns 0. Otherwise, it
+  returns a number in the range 1..MaxNrOfWorkstations.
+  BTGetInternalDialog may return a different number for each fileblock
+  opened by an application. To determine the internal dialog ID, FILER
+  places a "phantom lock" at offsets just preceding $7FFFFFFF in the
+  fileblock's dialog file. The lock is removed when the fileblock is
+  closed.
+
+Declaration
+  function BTGetNextUsedAddRecRef(IFBPtr : IsamFileBlockPtr) : LongInt;
+Purpose
+  Return the reference number that will be assigned to the next record
+  added.
+Description
+  If you use this routines in a network setting, be sure to lock the
+  fileblock before calling it and leave the lock in place until the
+  record is actually added; otherwise the number returned may be
+  changed by another workstation before the record is added.
+See Also
+  BTGetAfterNextUsedAddRecRef
+
+Declaration
+  procedure BTInformTTSAbortSuccessful(IFBPtr : IsamFileBlockPtr);
+Purpose
+  Clear all buffered internal data and remove all locks from a file
+  after a successful NetWare TTS transaction abort.
+Description
+  If you call TTSAbort from the NETWARE unit and receive a success
+  code, you should call BTInformTTSAbortSuccessful for all fileblocks
+  to which the transaction applied. This routine removes all locks
+  placed on the fileblock by the current workstation and it also marks
+  all memory buffers associated with the fileblock as invalid so that
+  FILER won't attempt to write them to disk.
+
+Declaration
+  function BTIsamLockRecord(Start, Len : LongInt;
+                            Handle : Word;
+                            TimeOut, DelayTime : Word ) : Boolean;
+Purpose
+  Place a lock using the current FILER locking model.
+Description
+  The bytes from offset Start to offset Start+Len-1 of the file with
+  handle Handle are locked. The routine retries for up to TimeOut
+  milliseconds. After each failing lock attempt, the routine delays
+  internally for DelayTime milliseconds. If the lock is placed
+  successfully, the routine returns True; otherwise, False.
+
+  If the Novell model is used, BTIsamLockRecord calls NetWare-specific
+  locking function that retries internally on the server. If the MsNet
+  model is used, the FILER unit itself performs the retries. If NoNet
+  is used, BTIsamLockRecord does nothing but return True.
+
+
+5.  EMSHEAP
+=====================================================================
+A new define, StdEMSInstCheck, was added to the unit. When this define
+is not active, EMSHEAP determines whether EMS memory is available by
+looking for a signature in memory near where the int $67 vector
+points. When the define is active, EMSHEAP *also* tries to open the
+device 'EMMXXXX0'. Some older EMS drivers fail the second test even
+though EMS is actually present. StdEMSInstCheck is undefined by
+default.
+
+Several defines that were previously in BTDEFINE.INC (DebugEMSHeap,
+NoErrorCheckEMSHeap, ManualInitEMSHeap, UseTPEMS, and UseOPEMS) were
+moved into EMSHEAP.PAS, which is the only file they affect.
+
+
+6.  ISAMTOOL
+=====================================================================
+The WSNrLogIn and WSNrLogOut routines are no longer provided, since a
+similar algorithm is built into the FILER unit. However, no log file
+is used by FILER; "phantom locks" are used instead.
+
+The declaration of InvertString was changed and a second version
+of it was added to support ASCIIZ strings. Here are the new
+declarations:
+
+{$IFDEF LengthByteKeys}
+  procedure InvertString(var Dest : string;
+                         Source : string;
+                         MaxLen : byte);
+{$ENDIF}
+{$IFDEF ASCIIZeroKeys}
+  procedure InvertString(var Dest;
+                         var Source;
+                         MaxLen : Byte);
+{$ENDIF}
+
+The routine works the same as before, except that it returns the
+result in the Dest parameter instead of a function result.
+
+
+7.  NETWARE
+=====================================================================
+Starting with NetWare version 2.2, Novell changed the way that print
+spooling works. The change also affects all versions of NetWare 386.
+NetWare's print spooling is now oriented towards print queues instead
+of network printer numbers. None of the printing functions in the
+NETWARE unit work correctly unless you perform a bit of additional
+setup on your file server. You must inform NetWare of the equivalence
+between a server printer number and a print queue name. You do so by
+putting an entry in the file server startup file AUTOEXEC.NCF:
+
+   SET SPOOL 0 to LASER1
+
+This example associates server printer number 0 with a print queue
+named LASER1. You must restart the server before the change takes
+effect.
+
+You can also print under NetWare by using the new NETPRNQU unit. See
+NETPRN.LZH on the BONUS disk.
+
+
+8.  VREC
+=====================================================================
+The internal section buffer is now automatically resized by all
+routines that use it, if they detect that the buffer is too small. If
+there is insufficient memory when VREC attempts to resize the buffer,
+the new error code 10040 is stored in IsamError.
+
+
+9. DBIMPEXP
+=====================================================================
+As of version 5.41 B-Tree Filer incorporates a unit that facilitates
+the conversion of data from dBase III or IV data and memo files to a
+Filer format, and vice versa. When converting from a dBase file to a
+Filer fileblock, the ability exists to create a Pascal include file
+that describes the record format of the Filer fileblock being
+created. Please see the documentation text file DBIMPEXP.DOC for more
+details.
+
+Please note that the current version does not support Filer variable
+length records or dBase index files.
+
+
+10. BROWSER
+=====================================================================
+Retry logic was removed from the internal ReadLock procedure. This
+change was needed because the FILER unit now automatically retries
+read locks and the additional retries lead to excessive delays.
+
+Browse and BrowseAgain return a function result of 2 and a new
+IsamError code of 8102 if the user presses <Enter> (or any user exit
+key) while the highlight bar is over a record that has just been
+deleted by another workstation.
+
+Before version 5.41, Browse would ignore an <Enter> if the key was
+pressed while the fileblock was locked by another station. Now Browse
+always exits when <Enter> (or any user exit key) is pressed. It
+returns an appropriate IsamError code (usually 10397, a lock prevents
+the operation) when there is a fileblock lock. Applications must be
+prepared to deal with these new errors. See SIMPDEMO and NETDEMO for
+examples.
+
+
+11. MSORT
+=====================================================================
+Support for Windows and DPMI has been removed from this unit, since it
+proved to be unreliable under certain conditions and could not be
+fixed in a reasonable way. The MSORTP.LZH archive found in the BONUS
+directory contains a new protected mode merge sort unit that is better
+suited for this environment. MSORTP can also be used for DOS real mode
+applications developed using Borland Pascal 7.0 or Turbo Pascal 7.0.
+(It depends on the PChar data type, which is available to DOS
+applications only with BP7 or TP7.) MSORTP.LZH contains a doc file and
+example programs as well as the unit itself.
+
+
+12. NUMKEYS
+=====================================================================
+As of version 5.41, several new functions have been added to enhance
+compatibility with the C version of B-Tree Filer. C programmers work
+with null-terminated strings and many of the Pascal strings generated
+by NUMKEYS functions are not compatible with null-terminated strings
+since the Pascal strings contain embedded nulls. As a result, the C
+module that corresponds to NUMKEYS uses a different algorithm for
+converting numbers to keys; this algorithm guarantees that the result
+string never contains embedded nulls.
+
+The following new NUMKEYS functions are provided to convert between
+the two string formats:
+
+  function CStyleNumKey(S : string) : string;
+    {-Convert Pascal-style numkey S into a C-style numkey,
+      compatible with ASCIIZ}
+
+  function PascalStyleNumKey(S : string) : string;
+    {-Convert C-style numkey S into a Pascal-style numkey}
+
+Whenever you plan to create a database that is accessible from the C
+version of B-Tree Filer you should either 1) avoid using any function
+from the NUMKEYS unit or 2) convert the string to C style by calling
+CStyleNumKey before storing the string in the index file. Also note
+that the C version does not provide functions that correspond to
+PackXxxKey or UnpackXxxKey, since their value is limited after the
+restriction of no embedded nulls is imposed.
+
+Another new function allows the creation of a descending key using an
+algorithm that is compatible with C-style strings:
+
+  function CStyleDescendingKey(S : string; MaxLen : byte) : string;
+    {-Convert S to a descending key, using C-style algorithm}
+
+Note that C-style strings are somewhat longer than the corresponding
+Pascal-style string, because the C-style string uses only 7 out of
+each 8 bits for data storage. The 8th bit is always set to 1 to
+guarantee that each byte is non-zero.
+
+As of version 5.41, the following functions were added to NUMKEYS to
+complete the set of numeric data types that it supports:
+
+  function ByteToKey(B : Byte) : String1;
+    {-Convert a byte to a string}
+
+  function KeyToByte(S : String1) : Byte;
+    {-Convert a string to a byte}
+
+The implementation of these functions is trivial in the Pascal
+version, but they are added to provide a match to the corresponding C
+module, where the implementation is not so trivial.
+
+
+13. Clarifications on Filer network usage
+=====================================================================
+The following topics are proving popular on our technical support
+line and in our forum on CompuServe. In an attempt to forestall some
+of these queries, this section will expand on some B-Tree Filer
+network (or multiuser) usage and efficiency topics.
+
+
+Internal readlocks
+------------------
+Whenever you call a B-Tree Filer routine that will read the fileblock
+(for example BTGetRec, BTNextKey) without placing a full lock or a
+readlock on the fileblock first, Filer will place a temporary read-
+lock before doing the required action and will release it afterwards.
+It needs to do this: the single call to the high level routine may
+result in a cascade of internal reads, and Filer has to be sure that
+the fileblock will not alter in the meantime. Furthermore Filer will
+read the dialog file every time a readlock is placed, to check whether
+the fileblock has been changed by another workstation (see the
+discussion of the dialog file below).
+
+In general the only effect on your program will be if you are going to
+do a series of read operations in a loop: placing a readlock before
+starting the loop will result in a faster, more efficient loop
+compared with letting Filer place its internal automatic readlocks.
+
+
+The Dialog file
+---------------
+In a network environment the dialog file is important. All fileblock
+locks are placed on the dialog file, not on the data or index files.
+Without going into too much detail, there is a section of the dialog
+file for each workstation (or to be precise, each workstation number).
+Placing a readlock on a fileblock locks the workstation's section of
+the dialog file, placing a full lock will lock _all_ workstation
+sections of the dialog file. This dialog section is further used by
+other workstations to signal to yours that the fileblock has been
+changed - it consists of a set of bit flags which will be set on by
+other workstations, and which your workstation will set off. Every
+time a lock is placed on the fileblock (either a full lock, or an
+explicit readlock or an implicit readlock) Filer will read the
+workstation's dialog section and if the bit flags are on, invalidate
+its internal index pages (forcing them to be reread) and rewrite its
+section with all the flags off.
+
+The size of a dialog file is proportional to MaxNrOfWorkstations and
+the number of indexes for the fileblock itself. Hence if you change
+either of these values, you must delete the dialog file and let it be
+recreated automatically by BTOpenFileBlock. Similarly if you have a
+dialog file created in save mode by a single-user application: delete
+it and allow it to be recreated. This also means that all Filer
+applications that use a fileblock _must_ have the same value for
+MaxNrOfWorkstations. Note that opening a fileblock in read-only mode
+will _not_ cause the dialog file to be recreated.
+
+
+Read-Only mode
+--------------
+When you open a fileblock in read-only mode from a given workstation
+in a multiuser application, Filer will not write anything at all to
+the fileblock (either to the data, the index or to the dialog files).
+This implies that you must consider an efficiency issue whenever other
+workstations can write to the fileblock (ie the AllReadOnly parameter
+is set false for the call to BTOpenFileBlock). Basically, the dialog
+file bit flags for this workstation will _never_ get set off by Filer,
+it would after all require writing to the dialog file. Hence, every
+single readlock placed by the application (either explicitly with
+BTReadLockFileBlock or implicitly by Filer itself) will cause the
+index pages currently held in memory to be marked invalid and
+therefore force them to be reread from the index file. To improve
+efficiency in this situation consider not using read-only mode at all
+(so that the dialog bit flags would get reset properly), or setting
+the AllReadOnly parameter to true when opening the fileblock (no
+locking issues would arise), or using explicit readlocks.
+
+
+Setting a full lock on a readlocked file
+----------------------------------------
+The locking algorithm introduced for efficiency reasons on a heavily
+loaded network in version 5.40 of B-Tree Filer introduced a slight
+problem to be aware of in certain situations. To recap, if you had a
+readlock on a fileblock and then wanted to place a full lock, Filer
+would have to remove the readlock first and then place the full lock.
+(You cannot have the same region of a file locked twice.) This
+process would introduce a small window of opportunity for another
+workstation to place a full lock before you could. Ordinarily this
+would not matter, except if you were following the example pseudocode
+for deleting a record that we present in the manual (page 75).
+
+Basically, what this code shows is how to delete a record in a
+multiuser environment. It places a readlock, rereads the record,
+compares it with its internal version, if they are equal (ie no one
+else has altered the record in the meantime) it places a full lock on
+the fileblock and deletes the record. Assume now the following
+scenario: two individual workstations try and delete the same record
+at the same time. They both get to the point where they try and place
+the full lock (they've both decided that the record has not changed).
+Filer removes the readlock first for each workstation. The first
+workstation gets the full lock, the second has to wait (an internal
+Filer process). The first station deletes the record and releases
+the lock. The second station gets its full lock, and tries to delete
+the record again. Result: a corrupted data file.
+
+Our advice in this situation is to ignore the pseudocode example, and
+to follow the actual Pascal code shown a couple of pages further on as
+it places a full lock before rereading the record rather than just a
+readlock. We are considering methods by which we can get round this
+limitation, but are loath to return to the previous locking method
+which used two internal physical locks for every full lock (not very
+efficient in a heavily loaded network).
+
+
+14. NetWare Shells Warning
+=====================================================================
+As noted in the manual, certain older NetWare shells have a bug when
+reading a block from disk that has a lock (see page 31 in the manual).
+Unfortunately, having solved the bug for shell version 3.22, Novell
+then reintroduced it with the shells that are for MS-DOS 6.0.
+
+At the time of writing, the shell versions with this bug are 3.31,
+3.32 and those less than 3.22.
+
+The workaround is given in the manual: you have to define the compiler
+directive LockBeforeRead in the BTDEFINE.INC file, and then recompile
+the FILER unit.
+
+The bug occurs as follows: station A places a lock on a record.
+Station B then tries to read the record. What should happen is that
+the DOS call to read the record should fail with the carry flag set
+indicating an error and AX set to error code 5 (access denied).
+However, with one of these buggy shells, the carry flag is not being
+set, but AX is still set to error 5. Filer views this as the DOS call
+being successful and that 5 bytes were read by the call. Filer (in
+most cases) will have tried to read more than 5 bytes. It then reports
+this situation as being a 10070 error (not enough bytes were read).
+Using the directive LockBeforeRead forces Filer to try and lock the
+record before reading it. If it is already locked, an access denied
+error is generated.
+
+
+15.  Corrections to the Manual
+=====================================================================
+p. 266    The typed constant referred to as <UsedErrorMessage> is
+          actually named <UseErrorMessage>.
+

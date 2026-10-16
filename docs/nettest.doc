@@ -1,0 +1,25 @@
+NetTest is a program which excercises network messaging services. It is
+designed for point to point testing between two nodes at a time. One side of
+the connection must act as the sender, and the other must act as the receiver.
+Specify /r (or -r) on the command line for the receiving side.  Type
+NetTest /? for help on the two other options.
+
+By default NetTest will check for the presence of Advanced NetWare and NetBIOS
+(or a NetBIOS emulator). If Adv. NetWare is present, it will test message pipe
+services, and then IPX and SPX services. If NetBIOS is present, it will then
+test datagram and session services. There are command line options available to
+force NetTest to perform only either the NetBIOS or the NetWare test (NetTest
+/B forces NetBIOS only and NetTest /N forces Advanced NetWare only).
+
+This program was written for testing purposes. It was never meant for public
+distribution. If there is suffucient interest, I can make it a more
+comprehensive network exerciser and put it on the public domain. Let me know if
+you think that would be useful.
+
+  Richard Sadowsky
+  Software Engineer
+  TurboPower Software
+  CIS: 74017,1670
+  work phone: (408) 438-8608
+
+

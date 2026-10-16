@@ -1,0 +1,209 @@
+B-Tree Filer 5.41 - Free Pascal port for Windows and Linux
+==========================================================
+
+All file and directory names were converted to lower case. Files whose
+only change is the new name are not listed here.
+
+Compiler: Free Pascal 3.2.2, tested on Linux x86_64 and Win64.
+
+
+Changed files
+-------------
+
+src/btdefine.inc
+    Rewritten for Free Pascal: {$MODE TP}, byte packed records, enums and
+    sets (keeps the data and index files binary compatible with the MS-DOS
+    version); undefines the predefined symbol WINDOWS (meant 16 bit Windows
+    in these sources). EMS, Novell, DPMI/Windows and Turbo Pascal version
+    settings removed. NoNet or MsNet must be defined.
+
+src/basesupp.pas
+    Rewritten. The MS-DOS register interface (GenRegisters, CallMsDos,
+    CallIntr, interrupt vectors, real mode memory) is replaced by an
+    operating system layer for Windows and Linux (open, create, read,
+    write, seek, flush, delete, rename, byte range locks) that returns
+    MS-DOS compatible error codes. New: IsamOSHandle, MemAvail/MaxAvail
+    for a "virtual heap" of BTVirtualHeapSize bytes. Inline code removed.
+
+src/filer.pas
+    IsamFile.Handle is now of type IsamOSHandle (was Word), new field
+    IsamFile.Shared. IsamFileNameLen raised from 64 to 255, IsamFileBlockName
+    from 192 to 255 characters. Handle parameters of BTGetRecordInfo,
+    BTPeekGetRecordInfo, BTIsamLockRecord and BTIsamUnLockRecord are now
+    IsamOSHandle. EMS code removed (NrOfEMSTreePages of BTInitIsam is
+    ignored). The INT 24h critical error handler (machine code) removed.
+
+src/filer.inc
+    EMS code removed; segment:offset pointer arithmetic replaced; Handle
+    parameter types changed.
+
+src/filer.cfg
+    Default extensions are lower case ('dat', 'ix', 'dia', 'sav', 'msg').
+    Comments of IsamFlushDOS33 and TestNetExistance updated.
+
+src/isambase.inc
+    All file operations (INT 21h calls and inline machine code) rewritten
+    on top of the operating system layer in basesupp.pas. Under Linux,
+    reads and writes of regions locked through another handle fail like
+    under MS-DOS and Windows (emulated mandatory locking for shared files).
+    IsamDelay uses Sleep instead of polling the DOS clock. IsamSetDosRetry
+    has no function any more. IsamForceExtension also accepts '/'.
+
+src/isamwork.inc
+    Inline machine code of IsamCompKeys (both key formats) replaced by
+    Pascal code. EMS code removed.
+
+src/isamlow.inc
+    EMS code and DOS version check removed.
+
+src/isnetsup.inc
+    Rewritten: INT 24h handler and Novell interface removed; the MsNet
+    interface uses the byte range locks of the operating system
+    (LockFileEx on Windows, open file description fcntl locks on Linux).
+
+src/isamnwrk.inc
+    Handle parameter types changed.
+
+src/numkeys.pas
+    Inline machine code replaced by Pascal code; the external routines of
+    numkeys.asm (Pack4BitKey ... Unpack6BitKey, DescendingKey) converted to
+    Pascal (verified against the original object code with 15000 test
+    cases). RealToKey/KeyToReal convert to/from the 6 byte Turbo Pascal
+    real format and ExtToKey/KeyToExt use the 10 byte format on all
+    platforms, so keys are identical to the MS-DOS version. Removed the
+    reference to the UseSymFlex define.
+
+src/isamtool.pas
+    ExtendHandles: no-op under Windows, raises RLIMIT_NOFILE under Linux
+    (was DOS function 67h). Inline machine code of InvertString replaced.
+
+src/iscompat.pas
+    Handle parameter type of GetRecordInfo changed to IsamOSHandle.
+
+src/reorg.pas
+    User routines called through the new procedure types
+    ReorgBuildKeyFunc, ReorgChangeDatSFunc and ReorgReXUserProc instead of
+    inline machine code; segment:offset pointer arithmetic replaced; uses
+    BaseSupp (MaxAvail).
+
+src/vreorg.pas
+    Same as reorg.pas, new procedure type VReorgChangeDatSFunc.
+
+src/vrec.pas
+    Uses BaseSupp (MaxAvail).
+
+src/tpalloc.pas
+    Rewritten for a flat address space: HugeGetMem/HugeFreeMem use
+    GetMem/FreeMem; Linear, LinearToPointer and PtrDiff use PtrInt (was
+    LongInt); Normalized returns the pointer unchanged; SegOfs removed.
+
+src/msort.pas
+    EMS support removed (UseEMS is ignored, UsingEMS is always False).
+    Inline machine code replaced by Pascal code; user routines called
+    through the procedure types MSortLessFunc and MSortUserProc; free disk
+    space determined with GetDiskFreeSpaceEx/statfs for the temporary
+    directory; PathName raised to 255 characters.
+
+src/msortinf.inc
+    EMS calculations removed; record pointer size is SizeOf(Pointer).
+
+src/tpcmd.pas
+    Inline machine code replaced; new procedure type TpCmdKeyFunc.
+
+src/browser.pas
+src/browser.inc
+    Uses the Crt unit of Free Pascal only (TPCRT/OPCRT and mouse support
+    removed). User routines called through new procedure types
+    (BrowseBuildRowProc, BrowseDisplayRowProc, BrowseSpecialTaskProc,
+    BrowseValidateFunc, BrowseRefreshFunc, BrowseKeyFunc, BrowseHelpProc).
+    Cursor shape set with CursorOn/CursorOff instead of the video BIOS.
+    RefreshPeriodically uses the system tick count instead of the BIOS
+    timer at $40:$6C and no longer keeps the CPU busy. The NetUsed variable
+    of BrowseI is now initialized.
+
+src/carrconv.pas
+    Inline machine code replaced. BadDate/BadTime constants fixed for
+    64 bit constant evaluation. Comp handled as integer type on Win64.
+    Removed the references to the UseSymFlex and SymFlexGE20 defines.
+
+src/dbimpexp.pas
+src/dbimpexp.in1
+src/dbimpexp.in2
+    Inline machine code replaced; GetDate from BaseSupp; default extensions
+    lower case; dump and type definition file names are no longer
+    converted to upper case; '/' accepted as path separator; two duplicate
+    (unreachable) case labels removed. Removed the references to the
+    UseSymFlex and SymFlexGE20 defines (FLibSupp and DataDict units).
+
+src/isam2db.pas
+    Removed the references to the UseSymFlex define (FLibSupp and DataDict
+    units); file name shown in lower case.
+
+src/db2isam.pas
+src/convert.pas
+src/example.pas
+src/netexamp.pas
+    Include btdefine.inc for the compiler settings. convert.pas,
+    example.pas and netexamp.pas: fileblock names in lower case;
+    convert.pas: 16 bit Windows (WinCrt) conditional removed.
+
+src/traffic.pas
+    Uses BaseSupp (MemAvail); fileblock name in lower case; 16 bit Windows
+    (WinCrt) conditional removed. The /N (Novell) option now ends with
+    IsamError 10310, since the Novell interface is not available.
+
+src/bigsort.pas
+    Standard handles mapped to the operating system handles, console test
+    with GetFileType/isatty instead of a DOS IOCTL call, no ^Z written at
+    the end of the output.
+
+src/simpdemo.pas
+    TPCRT/OPCRT and mouse conditionals removed; printing goes to PRN on
+    Windows and to lpr on Linux; line drawing characters shown as ASCII
+    under Linux; fileblock name in lower case.
+
+src/netdemo.pas
+    No longer needs Turbo Professional: replacements for the routines of
+    TPSTRING, TPCRT, TPENTRY (entry screen) and TPMEMO (memo editor) are
+    part of the program. Editing is finished with <^Enter> or <F10>.
+    Printing and screen output as in simpdemo.pas; fileblock name in
+    lower case.
+
+readme.md
+    New section about the Free Pascal port, new build instructions.
+
+.gitignore
+    Build output of Free Pascal added.
+
+
+New files
+---------
+
+changes.txt         this file
+src/build.sh        build script for Linux
+src/build.bat       build script for Windows
+
+
+Files moved unchanged to src/unported
+-------------------------------------
+
+These use MS-DOS, Novell NetWare, NetBIOS, IPX/SPX or EMS services that have
+no equivalent under Windows and Linux, or belong to the Borland build:
+
+    NetWare, NetBIOS, IPX/SPX units:
+        netware.pas, netware.inc, netwarew.inc, netbios.pas, netbios.inc,
+        netbiosw.inc, netbios2.pas, netbiosd.pas, ipxspx.asm, ipxspx.inc,
+        ipxspxd.pas, netbind.pas, netbind.inc, netbindw.inc, netque.pas,
+        netque.inc, netquew.inc, netprnqu.pas, netprnqu.inc, netprnqw.inc,
+        netsema.pas, share.pas, share.inc, sharew.inc, windpmi.pas
+    Example programs for these units:
+        nsend.pas, nsendw.pas, nreceive.pas, nreceivw.pas, spx2way.pas,
+        nbchatw.pas, nbreset.pas, nbstatus.pas, netdate.pas, netinfo.pas,
+        nettest.pas, mesexamp.pas, testque.pas, testque2.pas, testque3.pas,
+        testbind.pas, exprnque.pas, fullname.pas, veripass.pas
+    EMS support:
+        emsheap.pas, emsheap.cfg, emssupp.pas, msortems.inc
+    Converted to Pascal (now part of numkeys.pas), kept for reference:
+        numkeys.asm
+    Borland Makefiles (replaced by build.sh and build.bat):
+        filer.mak, netfiler.mak

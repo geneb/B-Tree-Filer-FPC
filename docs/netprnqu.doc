@@ -1,0 +1,116 @@
+NETPRNQU.PAS - unit NetPrnQue
+-----------------------------
+Richard S. Sadowsky
+10/2/92
+
+Advanced NetWare versions 2.2 and higher have sophisticated print
+queueing capabilities. A local LPT port can be attached to a print
+queue and output written to that port will be routed directly to the
+print queue.
+
+Unfortunately, the documentation Novell provides on the printer and
+job queueing API does not explain how to communicate directly with
+these print queues. The printer API discusses how to start, end, or
+cancel a capture, and how to set some print job flags. The job
+queueing API covers how to add, delete, and change a job in a general
+queue, but not specifically a print queue. One of the fields of the
+JobEntryType record that makes up a general queue entry is called the
+ClientRecord, which is a 152 byte buffer. The format of this record
+must be agreed upon by the job submitter and the job server that
+processes it. The bad news is that Novell does not appear to provide
+any documentation on the format of the ClientRecord when used with
+print queues.
+
+As a result, we had to reverse engineer the ClientRecord in order to
+develop routines to aid in the manipulation of print queues. The
+routines in NETPRNQU build on top of the NETBIND and NETQUE bonus
+units. NETBIND, NETQUE, and NETPRNQU are all compatible with Turbo
+Pascal 5 or greater for DOS, BP 7.0 for protected mode DOS, and all
+versions of Turbo Pascal For Windows.
+
+See the sample program EXPRNQUE for an example of these routines in
+action.
+
+Procedures and Functions
+-----------------------------
+Declaration
+  function AddFileToPrintQueue(QueueID : LongInt;
+                               var JobEntry : JobEntryType;
+                               FName : String) : Byte;
+Purpose
+  Add a file to the specified print queue.
+Description
+  QueueID specifies the print queue where the job is added. It is
+  usually obtained by calling GetPrinterQueue.
+
+  JobEntry must be properly initialized before the call. The following
+  fields are used:
+     TargetServerID   - use -1 to indicate "any server"
+     TargetExecTime   - fill with $FF to indicate "first opportunity"
+     JobControlFlags  - see the jcfXXX constants in NETQUE.PAS
+     NextJobDesc      - Asciiz string text description of print job.
+
+  This call copies the contents of the file FName into the print
+  queue.
+
+  AddFileToPrintQueue returns 0 if it is successful, otherwise a DOS
+  or NetWare error code.
+
+
+Declaration
+  function GetPrinterQueue(LPTDevice : Byte;
+                           var printQueueID : LongInt) : Byte;
+Purpose
+  Obtain the print queue assigned to a local LPT port.
+Description
+  Undocumented NetWare function to obtain the print queue assigned to
+  a specific local LPT port (0=LPT1, 1=LP2, 2=LPT3). Returns 0 if
+  successful. Note, however, that printQueueID is set to 0 if no queue
+  is attached to a particular printer port.
+
+
+Declaration
+  procedure MakeClientRecord(pTabSize : Byte;
+                             pNumCopies : Word;
+                             pFlags : Byte;
+                             pLinesPerPage : Word;
+                             pColsPerPage : Word;
+                             pBannerName : Str20;
+                             pUserName : String;
+                             var ClientArea : ClientRecordArea);
+Purpose
+  Initialize a ClientRecordArea variable.
+Description
+  Given some printer parameters, this routine initializes the
+  ClientRecordArea of the JobEntryType. The information needed to
+  write this function appears to be undocumented. This information was
+  obtained by reverse engineering print jobs created by NetWare. The
+  interpretation of some parameters is uncertain, as indicated in the
+  following.
+
+  pTabSize must be between 1..12.
+
+  pNumCopies must be 1 or more.
+
+  pFlags can be any combination of:
+    pqPrintBanner    = $80; print banner
+    pqText           = $40; enables tab expansion
+    pqNotify         = $10; notifies the submitting workstation when done
+    pqFormFeed       = $08; Suppress form feed after form
+
+  pLinesPerPage (not sure how this is used, pass zero here for
+  default).
+
+  pColsPerPage  (not sure how this is used, pass zero here for
+  default).
+
+  pBannerName is the name to appear in the banner. Only has meaning if
+  the pqPrintBanner flag is set in pFlags.
+
+  pUserName is the user name to appear in the banner. Only has meaning
+  if the pqPrintBanner flag is set in pFlags.
+
+  ClientArea will be formatted correctly for a call to
+  CreateQueueJobAndFile (or our higher level replacement,
+  AddFileToPrintQueue).
+

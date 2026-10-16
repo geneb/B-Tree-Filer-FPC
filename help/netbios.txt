@@ -1,0 +1,619 @@
+;
+;-------------------------------------------------------------------
+!TOPIC 260 NetBIOS
+The word NetBIOS stands for Network Basic Input/Output System. It is an
+application program interface (API) that supports data exchange between two
+workstations on a network. NetBIOS was introduced by IBM in 1984, and
+is in widespread use today. It has become an industry standard protocol and
+has been implemented by most modern microcomputer network operating
+systems. As such, programs written using NetBIOS services will run
+unmodified on a wide variety of networks.
+
+The NetBIOS unit implements the NetBIOS services for use in Turbo
+Pascal programs. This unit supports NetBIOS name, datagram and session
+services.
+
+As of version 5.23, NetBIOS may be used with Turbo Pascal for Windows, under
+Windows 3.0 or later running in Standard or Enhanced mode. There are minor
+differences in the calling sequences of many NetBIOS routines when used
+under Windows. Such headers are listed separately after the DOS calling
+sequence for the affected routines. There are also a few new Windows-specific
+types and procedures, which appear under the Windows declarations topic below.
+
+  0261Datagram services              0265Declarations
+  0262Miscellaneous                  0263Name services
+  0264Session services               0293Windows declarations
+;
+;-------------------------------------------------------------------
+!TOPIC 261 Datagram services
+!NOINDEX
+!NOSEARCH
+NetBIOS provides the following routines for accessing datagram services:
+
+  0286ReceiveBDataGram               0284ReceiveDataGram
+  0285SendBDataGram                  0283SendDataGram
+;
+;-------------------------------------------------------------------
+!TOPIC 262 Miscellaneous
+!NOINDEX
+!NOSEARCH
+NetBIOS provides the following general purpose routines:
+
+  0268CancelRequest                  0266ClearNCB
+  0282NetBIOSCmdCompleted            0267NetBIOSInstalled
+  0287NetBIOSRequest                 0281ResetAdapter
+;
+;-------------------------------------------------------------------
+!TOPIC 263 Name services
+!NOINDEX
+!NOSEARCH
+The following routines implement the NetBIOS name services:
+
+  0270NetBIOSAddGroupName            0269NetBIOSAddName
+  0271NetBIOSDeleteName
+;
+;-------------------------------------------------------------------
+!TOPIC 264 Session services
+!NOINDEX
+!NOSEARCH
+The following routines implement the NetBIOS session services:
+
+  0277NetBIOSCall                    0278NetBIOSCallNoWait
+  0272NetBIOSHangUp                  0279NetBIOSListen
+  0280NetBIOSListenNoWait            0275NetBIOSReceive
+  0276NetBIOSReceiveNoWait           0273NetBIOSSend
+  0274NetBIOSSendNoWait
+;
+;-------------------------------------------------------------------
+!TOPIC 265 Declarations
+!NOINDEX
+!NOSEARCH
+The 0260NetBIOS unit interfaces the following constants, types and
+variables:
+
+  0288DefaultAdapterNum              0289NBECommandPending
+  0292NbNameStr                      0291NCB
+  0290NetBIOS error codes
+;
+;-------------------------------------------------------------------
+!TOPIC 266 ClearNCB
+!NOINDEX
+procedure 0260NetBIOS.ClearNCB(var N : NCB);
+
+Initializes an 0291NCB to zero.  This is required before using an NCB.
+;
+;-------------------------------------------------------------------
+!TOPIC 267 NetBIOSInstalled
+!NOINDEX
+function 0260NetBIOS.NetBIOSInstalled : Boolean;
+
+Returns True if NetBIOS is installed.
+;
+;-------------------------------------------------------------------
+!TOPIC 268 CancelRequest
+!NOINDEX
+function 0260NetBIOS.CancelRequest(var N : NCB) : Byte;
+
+Under Windows
+!LINE
+function CancelRequest(var N : WinNCB) : Byte;
+
+Cancels a pending NetBIOS request.
+;
+;-------------------------------------------------------------------
+!TOPIC 269 NetBIOSAddName
+!NOINDEX
+function 0260NetBIOS.NetBIOSAddName(NameToAdd : NBNameStr;
+                                var NameNumber : Byte) : Byte;
+
+Adds a name to the local NetBIOS name table.
+
+See also:  0270NetBIOSAddGroupName  0271NetBIOSDeleteName
+;
+;-------------------------------------------------------------------
+!TOPIC 270 NetBIOSAddGroupName
+!NOINDEX
+function 0260NetBIOS.NetBIOSAddGroupName(NameToAdd : NBNameStr;
+                                     var NameNumber : Byte) : Byte;
+
+Adds a group name to the local NetBIOS name table.
+
+See also:  0269NetBIOSAddName  0271NetBIOSDeleteName
+;
+;-------------------------------------------------------------------
+!TOPIC 271 NetBIOSDeleteName
+!NOINDEX
+function 0260NetBIOS.NetBIOSDeleteName(NameToDelete : NBNameStr) : Byte;
+
+Deletes a name or group name from the local NetBIOS name table.
+
+See also:  0270NetBIOSAddGroupName  0269NetBIOSAddName
+;
+;-------------------------------------------------------------------
+!TOPIC 272 NetBIOSHangUp
+!NOINDEX
+function 0260NetBIOS.NetBIOSHangUp(SessionLSN : Byte) : Byte;
+
+Closes an existing session.
+
+See also:
+  0277NetBIOSCall               0278NetBIOSCallNoWait       0279NetBIOSListen
+  0280NetBIOSListenNoWait
+;
+;-------------------------------------------------------------------
+!TOPIC 273 NetBIOSSend
+!NOINDEX
+function 0260NetBIOS.NetBIOSSend(SessionLSN : Byte;
+                             PacketSize : Word;
+                             var Packet) : Byte;
+
+Under Windows
+!LINE
+function NetBiosSend(SessionLSN : Byte;
+                     PacketSize : Word;
+                     Packet : Pointer) : Byte;
+
+Sends a data packet via session services.
+
+See also:  0275NetBIOSReceive  0276NetBIOSReceiveNoWait  0274NetBIOSSendNoWait
+;
+;-------------------------------------------------------------------
+!TOPIC 274 NetBIOSSendNoWait
+!NOINDEX
+procedure 0260NetBIOS.NetBIOSSendNoWait(SessionLSN : Byte;
+                                    PacketSize : Word;
+                                    PostEvent  : Pointer;
+                                    var N : NCB;
+                                    var Packet);
+
+Under Windows
+!LINE
+procedure NetBiosSendNoWait(SessionLSN : Byte;
+                            PacketSize : Word;
+                            var PostEvent  : WinPostType;
+                            var N : WinNCB;
+                            Packet : Pointer);
+
+Send a data packet via session services. Does not wait for event to
+complete (returns immediately).
+
+See also:  0275NetBIOSReceive  0276NetBIOSReceiveNoWait  0273NetBIOSSend
+;
+;-------------------------------------------------------------------
+!TOPIC 275 NetBIOSReceive
+!NOINDEX
+function 0260NetBIOS.NetBIOSReceive(SessionLSN : Byte;
+                                PacketSize : Word;
+                                var Packet) : Byte;
+
+Under Windows
+!LINE
+function NetBiosReceive(SessionLSN : Byte;
+                        PacketSize : Word;
+                        Packet : Pointer) : Byte;
+
+Receives a data packet via session services.
+
+See also:  0276NetBIOSReceiveNoWait  0273NetBIOSSend  0274NetBIOSSendNoWait
+;
+;-------------------------------------------------------------------
+!TOPIC 276 NetBIOSReceiveNoWait
+!NOINDEX
+procedure 0260NetBIOS.NetBIOSReceiveNoWait(SessionLSN : Byte;
+                                       PacketSize : Word;
+                                       PostEvent  : Pointer;
+                                       var N : NCB;
+                                       var Packet);
+
+Under Windows
+!LINE
+procedure NetBiosReceiveNoWait(SessionLSN : Byte;
+                               PacketSize : Word;
+                               var PostEvent  : WinPostType;
+                               var N : WinNCB;
+                               Packet : Pointer);
+
+Receive a data packet via session services. Does not wait for event to
+complete (returns immediately).
+
+See also:  0275NetBIOSReceive  0273NetBIOSSend  0274NetBIOSSendNoWait
+;
+;-------------------------------------------------------------------
+!TOPIC 277 NetBIOSCall
+!NOINDEX
+function 0260NetBIOS.NetBIOSCall(RemoteName, LocalName : NBNameStr;
+                             SendTimeOut, RecTimeOut : Byte;
+                             var SessionLSN : Byte) : Byte;
+
+Used to "call" another station to initiate a session (used with Listen).
+
+See also:
+  0278NetBIOSCallNoWait         0272NetBIOSHangUp           0279NetBIOSListen
+  0280NetBIOSListenNoWait
+;
+;-------------------------------------------------------------------
+!TOPIC 278 NetBIOSCallNoWait
+!NOINDEX
+procedure 0260NetBIOS.NetBIOSCallNoWait(RemoteName, LocalName : NBNameStr;
+                                    SendTimeOut, RecTimeOut :Byte;
+                                    PostEvent : Pointer;
+                                    var N : NCB);
+
+Under Windows
+!LINE
+procedure NetBiosCallNoWait(RemoteName,LocalName : NBNameStr;
+                            SendTimeOut,RecTimeOut : Byte;
+                            var PostEvent : WinPostType;
+                            var N : WinNCB);
+
+Used to "call" another node to initiate a session. Does not wait for event
+to complete (returns immediately).
+
+See also:
+  0277NetBIOSCall               0272NetBIOSHangUp           0279NetBIOSListen
+  0280NetBIOSListenNoWait
+;
+;-------------------------------------------------------------------
+!TOPIC 279 NetBIOSListen
+!NOINDEX
+function 0260NetBIOS.NetBIOSListen(RemoteName, LocalName : NBNameStr;
+                               SendTimeOut, RecTimeOut : Byte;
+                               var SessionLSN : Byte) : Byte;
+
+Used to listen for a "call" from another station.
+
+See also:
+  0277NetBIOSCall               0278NetBIOSCallNoWait       0272NetBIOSHangUp
+  0280NetBIOSListenNoWait
+;
+;-------------------------------------------------------------------
+!TOPIC 280 NetBIOSListenNoWait
+!NOINDEX
+procedure 0260NetBIOS.NetBIOSListenNoWait(RemoteName, LocalName : NBNameStr;
+                                      SendTimeOut, RecTimeOut : Byte;
+                                      PostEvent : Pointer;
+                                      var N : NCB);
+
+Under Windows
+!LINE
+procedure NetBiosListenNoWait(RemoteName,LocalName : NBNameStr;
+                              SendTimeOut,RecTimeOut : Byte;
+                              var PostEvent : WinPostType;
+                              var N : WinNCB);
+
+Listen for a "call" from another node to initiate a session. Does not wait
+for event to complete (returns immediately).
+
+See also:
+  0277NetBIOSCall               0278NetBIOSCallNoWait       0272NetBIOSHangUp
+  0279NetBIOSListen
+;
+;-------------------------------------------------------------------
+!TOPIC 281 ResetAdapter
+!NOINDEX
+function 0260NetBIOS.ResetAdapter(SessionCount : Byte;
+                              CommandCount : Byte) : Byte;
+
+Resets the specified NetBIOS adapter.
+;
+;-------------------------------------------------------------------
+!TOPIC 282 NetBIOSCmdCompleted
+!NOINDEX
+function 0260NetBIOS.NetBIOSCmdCompleted(var N : NCB;
+                                     var FinalRetCode : Byte) : Boolean;
+
+Under Windows
+!LINE
+function NetBiosCmdCompleted(var N : WinNCB;
+                             var FinalRetCode : Byte) : Boolean;
+
+Returns True if NetBIOS call made in NoWait state has been completed. If
+the event is complete, the final return code for the call is returned.
+
+See also:
+  0278NetBIOSCallNoWait         0280NetBIOSListenNoWait     0276NetBIOSReceiveNoWait
+  0274NetBIOSSendNoWait
+;
+;-------------------------------------------------------------------
+!TOPIC 283 SendDataGram
+!NOINDEX
+procedure 0260NetBIOS.SendDataGram(var N : NCB; SenderNameNum : Byte;
+                               ReceiverName : NBNameStr;
+                               Wait : Boolean;
+                               DGSize : Word;
+                               var Datagram);
+
+Under Windows
+!LINE
+procedure SendDataGram(var N : WinNCB; SenderNameNum : Byte;
+                       ReceiverName : NBNameStr;
+                       Wait : Boolean;
+                       var PostEvent : WinPostType;
+                       DGSize : Word;
+                       Datagram : Pointer);
+
+Sends a datagram.
+
+See also:  0284ReceiveDataGram
+;
+;-------------------------------------------------------------------
+!TOPIC 284 ReceiveDataGram
+!NOINDEX
+procedure 0260NetBIOS.ReceiveDataGram(var N : NCB;
+                                  ReceiverNameNum : Byte;
+                                  Wait : Boolean;
+                                  DGSize : Word;
+                                  var Datagram);
+
+Under Windows
+!LINE
+procedure ReceiveDataGram(var N : WinNCB;
+                          ReceiverNameNum : Byte;
+                          Wait : Boolean;
+                          var PostEvent : WinPostType;
+                          DGSize : Word;
+                          Datagram : Pointer);
+
+Receives a datagram.
+
+See also:  0283SendDataGram
+;
+;-------------------------------------------------------------------
+!TOPIC 285 SendBDataGram
+!NOINDEX
+procedure 0260NetBIOS.SendBDataGram(var N : NCB; SenderNameNum : Byte;
+                                Wait : Boolean;
+                                DGSize : Word;
+                                var Datagram);
+
+Under Windows
+!LINE
+procedure SendBDataGram(var N : WinNCB; SenderNameNum : Byte;
+                        Wait : Boolean;
+                        var PostEvent : WinPostType;
+                        DGSize : Word;
+                        Datagram : Pointer);
+
+Sends a broadcast datagram.
+
+See also:  0286ReceiveBDataGram
+;
+;-------------------------------------------------------------------
+!TOPIC 286 ReceiveBDataGram
+!NOINDEX
+procedure 0260NetBIOS.ReceiveBDataGram(var N : NCB;
+                                   ReceiverNameNum : Byte;
+                                   Wait : Boolean;
+                                   DGSize : Word;
+                                   var Datagram);
+
+Under Windows
+!LINE
+procedure ReceiveBDataGram(var N : WinNCB;
+                           ReceiverNameNum : Byte;
+                           Wait : Boolean;
+                           var PostEvent : WinPostType;
+                           DGSize : Word;
+                           Datagram : Pointer);
+
+Receives a broadcast datagram.
+
+See also:  0285SendBDataGram
+;
+;-------------------------------------------------------------------
+!TOPIC 287 NetBIOSRequest
+!NOINDEX
+procedure 0260NetBIOS.NetBIOSRequest(var N : NCB);
+
+Under Windows
+!LINE
+procedure NetBIOSRequest(N : NCBPtr);
+
+Submits the 0291NCB to NetBIOS for processing.
+;
+;-------------------------------------------------------------------
+!TOPIC 288 DefaultAdapterNum
+!NOINDEX
+const
+  DefaultAdapterNum : Byte = 0;
+
+The network adapter number used for all calls in the 0260NetBIOS unit.
+Allowable values are 0 or 1, with 0 being the primary adapter.
+;
+;-------------------------------------------------------------------
+!TOPIC 289 NBECommandPending
+!NOINDEX
+const
+  NBECommandPending = $FF;
+
+When stored in the CmdComplete field of an 0291NCB it indicates that a
+command is still pending.
+;
+;-------------------------------------------------------------------
+!TOPIC 290 NetBIOS error codes
+!NOINDEX
+!NOSEARCH
+const
+  NBESuccess                 = $00;
+  NBEInvalidBufferLength     = $01;
+  NBEInvalidCommand          = $03;
+  NBETimedOut                = $05;
+  NBEIncomplete              = $06;
+  NBELocalNoAckFailed        = $07;
+  NBEInvalidLSN              = $08;
+  NBENoResourceAvail         = $09;
+  NBESessionClosed           = $0A;
+  NBECommandCancelled        = $0B;
+  NBEDuplicateName           = $0D;
+  NBENameTableFull           = $0E;
+  NBENameHasActive           = $0F;
+  NBELocalSessionTableFull   = $11;
+  NBESessionNoListen         = $12;
+  NBEIllegalNameNumber       = $13;
+  NBECannotFindName          = $14;
+  NBENoAnswer                = $14;
+  NBEInvalidName             = $15;
+  NBENameInUseOnRemote       = $16;
+  NBENameDeleted             = $17;
+  NBESessionAbnormal         = $18;
+  NBENameConflict            = $19;
+  NBEIncompatibleDevice      = $1A;
+  NBEInterfaceBusy           = $21;
+  NBETooManyCommands         = $22;
+  NBEInvalidLanA             = $23;
+  NBECompletedWhileCancel    = $24;
+  NBEReservedName            = $25;
+  NBENotValidCancel          = $26;
+  NBESystemError             = $40;
+  NBEHotCarrierFromRemote    = $41;
+  NBEHotCarrier              = $42;
+  NBENoCarrier               = $43;
+  {50h-F6h indicate adapter malfunction}
+  NBEUnexpectedAdaptClose    = $FD;
+
+0260NetBIOS unit error code constants. NetBIOS returns error code
+information in the RetCode field of an 0291NCB.
+;
+;-------------------------------------------------------------------
+!TOPIC 291 NCB
+!NOINDEX
+type
+  NCB  = record
+           Command     : Byte;    {the NetBIOS command}
+           RetCode     : Byte;    {the return code}
+           LSN         : Byte;    {the local session num}
+           NameNum     : Byte;    {the NetBIOS name table num}
+           Buffer      : Pointer; {point to data buffer}
+           BufLen      : Word;    {length of the data buffer}
+           CallName    : CallNameType;  {The local name}
+           Name        : CallNameType;  {the remote name}
+           RTO         : Byte;    {Receive Time Out}
+           STO         : Byte;    {Send Time Out}
+           PostRoutine : Pointer; {the post event routine}
+           LanaNum     : Byte;    {the LAN adapter number}
+           CmdComplete : Byte;    {the command complete flag}
+           Reserved    : Array[1..14] of Byte; {scratch}
+         end;
+
+The NetBIOS control block. This 64 byte record structure is the heart of
+all NetBIOS requests.
+
+The 0260NetBIOS unit manages most of the fields of the NCB for you. The
+only fields of concern to you are CmdComplete and RetCode. CmdComplete
+contains a value of $FF when the command associated with the NCB is still
+pending. When the command is complete, RetCode will have a zero to
+indicate success or an error code.
+
+See also:  0289NBECommandPending  0290NetBIOS error codes
+;
+;-------------------------------------------------------------------
+!TOPIC 292 NbNameStr
+!NOINDEX
+const
+  NbNameMax = 16;
+!LINE
+type
+  NbNameStr = String[NbNameMax];
+
+Turbo Pascal string type used for NetBIOS names. The maximum length is
+dictated by NetBIOS itself, so its value cannot be changed.
+;
+;-------------------------------------------------------------------
+!TOPIC 293 Windows declarations
+!NOINDEX
+!NOSEARCH
+NetBIOS provides the following data types and routines that are specific to
+usage under Microsoft Windows:
+
+Types
+  0294WinNCB                         0295WinNCBPtr
+  0296NetBiosPostRoutine             0297WinPostType
+
+Routines
+  0298GetWindowsPostRoutine          0299FreeWindowsPostRoutine
+  0300AllocateWinNCB                 0301FreeWinNCB
+;
+;-------------------------------------------------------------------
+!TOPIC 294 WinNCB
+!NOINDEX
+type
+  WinNCB =
+    record
+      NR, NP : NCBPtr;
+    end;
+
+This record type holds both real and protected mode pointers to an
+0291NCB. A variable of this type must be initialized with 0300AllocateWinNCB
+and disposed with 0301FreeWinNCB.
+;
+;-------------------------------------------------------------------
+!TOPIC 295 WinNCBPtr
+!NOINDEX
+type
+  WinNCBPtr = ^WinNCB;
+
+A pointer to a 0294WinNCB.
+;
+;-------------------------------------------------------------------
+!TOPIC 296 NetBiosPostRoutine
+!NOINDEX
+type
+  NetBiosPostRoutine = procedure(LastError : Byte; N : WinNCBPtr);
+
+This procedure type defines NetBIOS post routines for use in Windows
+applications.
+;
+;-------------------------------------------------------------------
+!TOPIC 297 WinPostType
+!NOINDEX
+type
+  WinPostType =
+    record
+      Regs     : DPMIReg;
+      Post     : NetBiosPostRoutine;
+      CallBack : RealModeCallbackProc;
+      NCBs     : WinNCBPtr;
+    end;
+
+This record holds various information needed to allow NetBIOS post routines
+while running under Windows. A variable of this type is passed to all the
+NetBIOS functions with NoWait options. A variable of this type must be
+initialized with a call to 0298GetWindowsPostRoutine or filled with zeros if no
+post routine is desired. When you have finished with it, it is disposed with a
+call to 0299FreeWindowsPostRoutine.
+;
+;-------------------------------------------------------------------
+!TOPIC 298 GetWindowsPostRoutine
+!NOINDEX
+function 0260NetBIOS.GetWindowsPostRoutine(ProtectedProc : NetBiosPostRoutine;
+                                       var WinPost : WinPostType)
+                                         : Boolean;
+
+Request a real mode callback for NetBIOS post routines.
+
+See also:  0299FreeWindowsPostRoutine
+;
+;-------------------------------------------------------------------
+!TOPIC 299 FreeWindowsPostRoutine
+!NOINDEX
+procedure 0260NetBIOS.FreeWindowsPostRoutine(var WinPost : WinPostType);
+
+Free a real mode callback for NetBIOS post routines.
+
+See also:  0298GetWindowsPostRoutine
+;
+;-------------------------------------------------------------------
+!TOPIC 300 AllocateWinNCB
+!NOINDEX
+function 0260NetBIOS.AllocateWinNCB(var N : WinNCB) : Boolean;
+
+Allocate memory for NCB for use under Windows.
+
+See also:  0301FreeWinNCB
+;
+;-------------------------------------------------------------------
+!TOPIC 301 FreeWinNCB
+!NOINDEX
+procedure 0260NetBIOS.FreeWinNCB(N : WinNCB);
+
+Free memory for NCB allocated by 0300AllocateWinNCB.

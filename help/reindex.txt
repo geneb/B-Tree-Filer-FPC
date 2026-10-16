@@ -1,0 +1,83 @@
+!WIDTH 76
+;
+;-------------------------------------------------------------------
+!TOPIC  0294 ReIndex
+If a Fileblock's index becomes corrupt or is deleted, it is necessary to
+reconstruct the index. The ReIndex unit rebuilds just the index file,
+without compressing out the deleted records in the data file.
+
+  0295ReIndexFileBlock                 0291Rebuild
+;
+;-------------------------------------------------------------------
+!TOPIC  0295 ReIndexFileBlock
+!NOINDEX
+procedure 0294ReIndex.ReIndexFileBlock(FBlName : IsamFileBlockName;
+                                   DatSLen : LongInt;
+                                   NumberOfKeys : Integer;
+                                   IID : IsamIndDescr;
+                                   FuncBuildKey : Pointer);
+
+This procedure reindexes the fileblock of name FBlName with possibly
+different keys. For this operation to succeed, every undeleted record must
+begin with a longint of value 0. ReindexFileBlock is similar to
+RebuildFileBlock, except that it does not require space for the ".SAV"
+file. ReindexFileBlock does not compress out deleted records, nor does it
+reconstruct the header of the data file (see NOTE below). Here's the basic
+sequence of events:
+
+!NOWRAP
+  1) Rename the ".DAT" file to ".SAV" if no ".SAV" file exists.
+  2) MakeFileBlock with the name FBlName, record length DatSLen,
+     NumberOfKeys of keys, and the index descriptor IID.
+  3) Close the new Fileblock, delete new ".DAT" file, and rename ".SAV"
+     file back to ".DAT".
+  4) OpenFileBlock
+  5) For every single key (1 to NumberOfKeys), read every data record
+     from the ".DAT" file and if not a deleted record add the key with
+     AddKey.
+  6) Close the new fileblock.
+  7) Verify the data file header record for number of records and deleted
+     records.
+!WRAP
+
+The user must write a function that builds the desired key from the data
+record in order to carry out step 5. The address of the function must be
+passed in FuncBuildKey. This function must be compiled under the FAR
+model, and it may not be nested within any other procedure or function. It
+should be of the following form:
+
+  {$F+}
+  function BuildKeyFunc(var DatS; KeyNr : Integer) : IsamKeyStr;
+
+The reindex procedure is aborted immediately in case of a fatal I/O error.
+The data record with all the keys that have been entered is deleted from
+the fileblock if a duplicate key is detected during the rebuild. The
+contents of the data record, along with its corresponding keys, are written
+to a file with an ".MSG" extension. This may later be examined with
+TYPE or a program like LIST. No file with an ".MSG" extension exists
+after the rebuild if there were no duplicate keys found during the
+reconstruction.
+
+NOTE: While the header record is not rebuilt, two critical fields of the
+header are verified. The number of deleted records and the number of used
+records are counted while rebuilding the keys. These numbers are compared
+with the values found in the header of the data file. If they do not match,
+a new IsamError 10430 will be generated. If 10430 is generated, the
+file will have been reindexed to the best of ReIndex's ability, but the
+integrity of the data file is suspect. It is recommended that a
+RebuildFileBlock be used to properly recreate the header record in the
+event of IsamError 10430. The flag maintained within the data file header
+that indicates whether the index file was left open is automatically
+cleared by ReindexFileBlock. In case the number of keys has changed, the
+NumberOfKeys passed explicitly to ReindexFileBlock is also written to
+the data file header. ReindexFileBlock should not be used with
+Fileblocks that have space preallocated to them through
+PreallocateFileBlock.
+
+The ReIndex unit checks the AbortReorg variable interfaced by Reorg
+after each key is added. A call to ReindexFileBlock can be aborted by
+setting AbortReorg within the FuncBuildKey or the IsamUserReXProcPtr
+routines.
+
+See also:     0296Reorg                 0291Rebuild
+

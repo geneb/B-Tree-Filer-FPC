@@ -1,0 +1,119 @@
+This file summarizes changes made between B-Tree Filer versions 5.40
+and 5.41. It is of interest primarily to Fast Update Plan subscribers.
+
+New Features and Changes
+---------------------------------------------------------------------
+This version of B-Tree Filer has been released to clear up some out-
+standing bugs, to provide compatibility for fileblocks created with
+B-Tree Filer for C, and also to provide the DBIMPEXP unit to convert
+data between Filer fileblocks and dBase data and memo files.
+
+WARNING: if you are using network B-Tree Filer under NetWare and are
+         using shell versions 3.31 and 3.32 (the shells for MSDOS
+         6.0), be aware that Novell reintroduced a bug that used to
+         exist in shells earlier than version 3.22 (the 'reading a
+         locked record does not fail' bug). See the discussion in
+         the READ.ME file and in the manual.
+
+FILER
+  - MaxNrOfWorkstations is now a typed constant, and can be altered
+    if required _before_ calling BTInitIsam.
+  - error 10065 (class 2) is raised whenever an attempt is made to
+    write to a fileblock opened in read-only mode.
+  - a new typed constant TestNetExistance has been introduced. If
+    set to true (the default) then BTInitIsam will do an internal
+    check to see whether the network specified in ExpectedNet can be
+    found. If false, no check for the network is made.
+  - a new constant InheritFileHandles has been introduced. This
+    defines whether any child processes receive the open fileblock
+    handles. If False (the default) then child processes will not
+    inherit the fileblock handles, if True then they will. Note
+    however, that child processes will *not* inherit any of the
+    B-Tree Filer data structures.
+  - ExtendHandles has been changed slightly, in that you can now
+    specify a number less than 20.
+
+BASESUPP
+  - various enhancements have been made to bring together DPMI and
+    Windows handling.
+
+NUMKEYS
+  - new routines have been added: ByteToKey, KeyToByte, CStyleNumKey
+    PascalStyleNumKey, CStyleDescendingKey to mimic the binary to key
+    routines that B-Tree Filer for C provides.
+
+MSORT
+  - for various reasons MSORT was not very efficient in protected
+    mode (either Windows or DPMI). A new unit has been written called
+    MSORTP. It has a similar interface to MSORT, but works exclusively
+    in pmode. MSORT will now only compile in real mode. MSORTP is
+    found on the BONUS diskette.
+
+DBIMPEXP
+  - a new unit that facilitates converting data from dBase data and
+    memo files to B-Tree Filer fileblocks, and vice versa. Full
+    details are available in the text file DBIMPEXP.DOC.
+
+
+New Features and Changes to BONUS Files
+---------------------------------------------------------------------
+NETBONUS
+  - now incorporates all the network specific BONUS files, including
+    the previously separate NETBIOS, NETPRN, NETTEST and TRAFFIC
+    files.
+
+NETBIOS2
+  - now supports Windows and DPMI modes
+
+
+Bugs Fixed
+---------------------------------------------------------------------
+FILER
+  - NovellUnlockRecord used wrong record length (seemed to only make
+    a difference in certain cases)
+  - BTLockFileBlock would return IsamError=10330 but with IsamOk=true
+  - under certain circumstances Filer would allow a write to a
+    readonly fileblock
+  - in pmode if a bad index number was passed to certain routines a
+    GPF would be generated before a programming error could be
+    reported
+  - BTNextKey and BTPrevKey had some problems with a fileblock opened
+    in readonly mode
+
+BROWSER
+  - numerous changes have been made to clear up the UseReadLock
+    handling, and lock error handling
+  - the scrollbar slider was never drawn with the correct attribute
+
+IPXSPX, IPXSPXD
+  - numerous changes have been made to clear up bugs introduced in
+    versions 5.23 and 5.40
+  - a Move was made to an un-dereferenced pointer in IPXListen
+
+WINDPMI
+  - there was one statement that assumed $X+ (the default for Windows
+    targets), the default for DPMI targets is however $X-
+
+NETWARE
+  - GetPrinterStatus is not supported under NetWare 3.x, the function
+    now returns the NetWare error code
+
+NETBIOSD
+  - the Windows NetBIOS real-mode callback would corrupt the real-mode
+    stack
+
+EMSHEAP
+  - calling ExitEMSHeap when ManualInitEMSHeap was defined would break
+    the exit procedure chain
+
+MSORT
+  - when compiling with $T+, a 'type mismatch' error would be
+    generated; the unit now has an explicit $T-
+
+OOFILER (bonus)
+  - the ModifyRecord and DeleteRecord methods treated null keys in a
+    different fashion
+
+OBROWSE (bonus)
+  - various fixes have been made to solve highlight bar problems
+

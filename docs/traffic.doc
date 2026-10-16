@@ -1,0 +1,146 @@
+                               TRAFFIC
+          A Utility for determining optimal timeout values
+              Copyright (c) 1992, Enz Edv Beratung GmbH
+
+TRAFFIC is a utility for optimizing the lock parameters
+IsamFBlockTimeOutFactor, IsamLockTimeOut and IsamDelayBetwLocks in a
+B-Tree Filer application.
+
+TRAFFIC uses a fileblock named 'TRAFFIC'. The fileblock has a record
+length of 353 bytes and uses 4 indexes, which is similar to many
+applications. The TRAFFIC source code can be customized if necessary.
+
+TRAFFIC executes two elementary operations:
+
+1. Write: the fileblock is first locked, then a random record and the
+corresponding indexes are added, finally the fileblock lock is
+removed.
+
+2. Read: the fileblock is first readlocked, then after the read of a
+random key of a random index, the matching record is read and then
+the readlock is removed.
+
+After every elementary operation, a short delay occurs. This is
+adjustable by parameter and has a default of 100 ms.
+
+To allow you to get a quick overview of the operations as they occur
+on each workstation on the network, a character is displayed for each
+operation:
+
+  :  Write was successfully executed
+  .  Read was successfully executed
+  X  Fileblock lock before write attempt failed
+  x  Readlock before read attempt failed
+  O  Random record for write attempt already exists
+  o  No record to read was found (only occurs for empty file)
+
+The first four characters are the most relevant during testing. "O"
+and "o" serve only for status notification and can generally be
+ignored.
+
+Starting the Tests
+------------------
+Assure that the appropriate conditional symbol for your network is
+defined in BTDEFINE.INC and compile TRAFFIC. You may want to define
+both MsNet and Novell in order to test the effect of both locking
+methods on a Novell network. Then copy TRAFFIC.EXE to a directory on
+your file server where all workstations can access it. Run TRAFFIC
+without any parameters to get a summary of command line options.
+
+For the remainder of this description we assume that the test is
+executed on a Novell network and a total of 5 workstations (A to E)
+participate.
+
+For the start of the first test, call the program from workstation A
+in the following manner:
+
+  TRAFFIC /N /W
+
+These options inform TRAFFIC that it is running on a Novell network
+and that the write test should be performed.
+
+TRAFFIC begins writing random records and shows a series of ":"
+characters, possibly interspersed with "O" characters which indicate a
+random duplication of records.
+
+Now start TRAFFIC on the workstations B through E with the following
+command line:
+
+  TRAFFIC /N /R
+
+Each of the workstations now performs random reads, indicated on
+screen by a series of "." characters.
+
+Press <CtrlC> to stop the tests.
+
+Evaluation of the Tests
+-----------------------
+The ideal case is when no "X" or "x" characters are displayed. For the
+test we've described, this is unlikely since this test already
+constitutes a very high network load. Therefore a few separated "X" or
+"x" characters are no reason for concern.
+
+What is to be done if "X" or "x" appear frequently or in blocks?
+TRAFFIC allows you to adjust the FILER unit's locking parameters in
+order to minimize the frequency of the locking failures.
+
+TRAFFIC Command Line Parameters
+-------------------------------
+The general form of the TRAFFIC command line is:
+
+  TRAFFIC NetworkType TestType [Options]
+
+NetworkType and TestType must always be specified, in the order shown.
+The following options are available:
+
+NetworkType options:
+  /N   Novell network (uses NetWare-specific lock calls)
+  /M   MsNet or compatible (uses generic DOS locking)
+  /O   no network (no locking, and therefore usable only on a
+         single workstation. Useful for speed comparisons)
+
+TestType options:
+  /R   Read test. The TRAFFIC fileblock must already have been created
+       or the test stops with error 9903.
+  /W   Write test. If the TRAFFIC fileblock doesn't already exist, it
+       is created in the current directory.
+  /Bn  Mixed Read and Write Test. "n" is a number between 1 and 255
+       that indicates how many read operations occur before a write is
+       done. For example /B10 indicates that TRAFFIC performs 10 reads
+       followed by 1 write. If no fileblock exists, the program stops
+       with the error code 9903.
+
+Other Options:
+  /Dn  "n" specifies the delay in milliseconds after each operation.
+       This value controls the load on the network.  Although the
+       default value of 100 ms on 5 workstations already causes a very
+       high network load, the load can be raised still further by
+       reducing the delay time. The value should be chosen to emulate
+       the operation of your intended application. Typical values for
+       a writing workstation are between 50 ms and 10000 ms. Typical
+       values for a reading workstation are between 10 ms and 500 ms.
+
+  /Tn  "n" specifies the timeout value in milliseconds for a locking
+       attempt. The default value is 768 ms. This value is used for a
+       readlock. For a writelock this value is multiplied by the
+       factor supplied with the /F option. Increase the /T value if a
+       reading workstation displays the "x" character too frequently.
+
+  /Fn  "n" specifies the factor that multiplies the /T timeout when a
+       fileblock writelock is placed. The default factor is 4. Hence,
+       by default a writelock is retried for about 3 seconds. Increase
+       the /F value if the /T timeout has been adjusted already and
+       the writing workstation displays the "X" character too
+       frequently. The total timeout for a writelock should not exceed
+       about 5 seconds or your end user will wonder why your program
+       has hung.
+
+  /Ln  "n" specifies the delay in milliseconds after a failed locking
+       attempt. The default value is 64 ms. This value is used only
+       for the MsNet network type. (Under Novell, the file server
+       queues lock requests and grants the request as soon as
+       possible.) Generally you won't need to change the default.
+       However, for some networks based on serial ports you may need
+       to increase the value in order to avoid overloading the network
+       communication channels.
+

@@ -1,0 +1,2415 @@
+;
+;-------------------------------------------------------------------
+!TOPIC 302 NetWare
+Novell supplies only C language routines to access the power of their
+Advanced NetWare operating system. The NetWare unit supplied here
+implements many of the NetWare application program interfaces (APIs). The
+tools in the NetWare unit access such facilities as the network print
+spooler, messaging services, direct station-to-station communications,
+NetWare SFT's Transaction Tracking Services, and others.
+
+The routines within this unit are specific to Novell's NetWare
+environment. Some operating systems claiming to be NetWare compatible may
+support some of these functions, but it is unlikely that they will support
+all.
+
+As of version 5.23, NetWare may be used with Turbo Pascal for Windows, under
+Windows 3.0 or later running in Standard or Enhanced mode. There are minor
+differences in the calling sequences of some NetWare routines when used
+under Windows. Such headers are listed separately after the DOS calling
+sequence for the affected routines. There are also a few new Windows-specific
+types and procedures, which appear under the Windows declarations topic below.
+
+The following categories of services are available:
+
+  0338Advanced messaging             0337Basic messaging
+  0304Declarations                   0303File and directory
+  0346Miscellaneous                  0336Printer services
+  0335Transaction Tracking           0449Windows declarations
+;
+;-------------------------------------------------------------------
+!TOPIC 303 File and directory
+!NOINDEX
+!NOSEARCH
+The following routines relate to NetWare file and directory services:
+
+  0350FileIsShareable                0348GetExtFAttr
+  0367GetDirHandle                   0369GetDirPath
+  0368GetDirRights                   0351MakeFileShareable
+  0349SetExtFAttr
+;
+;-------------------------------------------------------------------
+!TOPIC 304 Declarations
+!NOINDEX
+!NOSEARCH
+The NetWare unit interfaces the following types, constants, and
+variables:
+
+  0322AESECB                         0463AESECBPtr
+  0313BinderyObject                  0308DayOfTheWeek
+  0334DefaultServerInfo              0315DriverInformation
+  0327ECBPtr                         0314FileServerNameTable
+  0320FragmentDescriptor             0318IPXAddress
+  0321IPXECB                         0319IPXHeader
+  0333IPXLocation                    0323IPXRec
+  0305MaxConnections                 0344MaxECBPool
+  0311PhysicalNodeAddress            0326PoolECB
+  0312PrinterDevice                  0310PrintJobType
+  0306Rights masks                   0309ServerInformation
+  0325SPXHeader                      0328SPXPool
+  0329SPXPoolQueue                   0330SPXPoolRec
+  0331SPXRec                         0324SPXStatusBlock
+  0307Status flags                   0332TargetType
+;
+;----------------------------------------------------------------------
+!TOPIC 305 MaxConnections
+!NOINDEX
+const
+  MaxConnections  = 255;
+
+This is the maximum number of connections allowed to be stored in a
+variable of type 0316ConnectionList. NetWare 386 currently supports up
+to 255 workstations.
+;
+;-------------------------------------------------------------------
+!TOPIC 306 Rights masks
+!NOINDEX
+!NOSEARCH
+const
+  NWRead          = $01;
+  NWWrite         = $02;
+  NWOpen          = $04;
+  NWCreate        = $08;
+  NWDelete        = $10;
+  NWParental      = $20;
+  NWSearch        = $40;
+  NWModify        = $80;
+
+Definitions of bits set in the effective rights mask returned by the
+function 0368GetDirRights.
+;
+;-------------------------------------------------------------------
+!TOPIC 307 Status flags
+!NOINDEX
+!NOSEARCH
+const
+  NWPermanent     = $01;
+  NWTemporary     = $02;
+  NWLocal         = $80;
+
+Definitions of bits set in the StatusFlag parameter returned by the
+function 0367GetDirHandle.
+;
+;-------------------------------------------------------------------
+!TOPIC 308 DayOfTheWeek
+!NOINDEX
+type
+  DayOfTheWeek = (Sunday, Monday, Tuesday, Wednesday,
+                  Thursday, Friday, Saturday);
+
+Used in conjunction with the 0352GetServerDateTime routine.
+;
+;-------------------------------------------------------------------
+!TOPIC 309 ServerInformation
+!NOINDEX
+type
+  ServerInformation =
+    record
+      Len         : Word;
+      ServName    : Array[1..48] of Char;
+      NetWareVer  : Byte;
+      NetWareSub  : Byte;
+      MaxConns    : Word;
+      UsedConns   : Word;
+      MaxVols     : Word;
+      Revision    : Byte;
+      SFTLevel    : Byte;
+      TTSLevel    : Byte;
+      PeakConn    : Word;
+      AccountVer  : Byte;
+      VAPVer      : Byte;
+      QueueVer    : Byte;
+      PrintServVer: Byte;
+      VirtualVer  : Byte;
+      SecurityVer : Byte;
+      BridgeVer   : Byte;
+      Reserved    : Array[1..60] of Byte;
+    end;
+
+A structure returned by the procedure 0365GetServerInfo. Most of the
+fields describe version numbers of the NetWare software running on the
+server. The most important fields are NetWareVer (the major version
+number), NetWareSub (the minor version number), MaxConns (the maximum
+number of workstation connections), and UsedConns (the number of
+connections in use).
+;
+;-------------------------------------------------------------------
+!TOPIC 310 PrintJobType
+!NOINDEX
+type
+  PrintJobType =
+    record
+      Status     : Byte; {Ignore this field}
+      Flags      : Byte; {Print flags:
+                            04h - print interrupted capture
+                            08h - Suppress auto form feed
+                            40h - Enable tab expansion
+                            80h - Print Banner page }
+      TabSize    : Byte; {Tab size (1..18) }
+      ServerPrinter
+                 : Byte; {0..4}
+      NumCopies  : Byte; {Number of copies (0..255) }
+      FormType   : Byte; {Form type (0..255) }
+      Reserved   : Byte;
+      Banner     : Array[1..13] of Char; {asciiz string}
+      Reserved2  : Byte;
+      LocalLPT   : Byte; {Local LPT device (0..2) }
+      FlushCaptureTimeout
+                 : Word; {In units of clock ticks (about
+                          1/18 of a second) }
+      FlushCaptureOnClose
+                 : Byte; {0 = enabled}
+    end;
+
+Used by 0384GetPrintJobFlags and 0385SetPrintJobFlags to represent
+the print job flags.
+;
+;-------------------------------------------------------------------
+!TOPIC 311 PhysicalNodeAddress
+!NOINDEX
+type
+  PhysicalNodeAddress = array[1..6] of Byte;
+
+This represents a 6 byte integer used for station addresses by NetWare.
+;
+;-------------------------------------------------------------------
+!TOPIC 312 PrinterDevice
+!NOINDEX
+type
+  PrinterDevice = (LPT1, LPT2, LPT3);
+
+Enumerated type to hold LPT number for printer services.
+;
+;-------------------------------------------------------------------
+!TOPIC 313 BinderyObject
+!NOINDEX
+type
+  BinderyObject = (ObjUnknown,
+                   ObjUser,
+                   ObjGroup,
+                   ObjPrintServer,
+                   ObjFileServer,
+                   ObjJobServer,
+                   ObjGateway,
+                   ObjReserved0,
+                   ObjArchiveServer,
+                   ObjReserved1,
+                   ObjJobQueue,
+                   ObjWild);
+
+Enumerated type representing the types of Bindery objects.
+;
+;-------------------------------------------------------------------
+!TOPIC 314 FileServerNameTable
+!NOINDEX
+type
+  FileServerNameTable = Array[1..8] of ServerName;
+
+An array to hold the names of up to 8 file servers.
+;
+;-------------------------------------------------------------------
+!TOPIC 315 DriverInformation
+!NOINDEX
+type
+  DriverInformation =
+    record
+      NetworkAddress : LongInt;           {The network address}
+      HostAddress : PhysicalNodeAddress;  {The node address of the server}
+      OptionNumber : Byte;                {the installation option number}
+      LanBoardName,                       {the name of the LAN board}
+      HardwareSettings : Str80;           {technical info about the board}
+    end;
+
+A type to hold information about a LAN driver, returned by the procedure
+0366GetDriverConfiguration.
+;
+;-------------------------------------------------------------------
+!TOPIC 316 ConnectionList
+!NOINDEX
+type
+  ConnectionList =
+    record
+      Count : Byte;         {the number of connections}
+      List  : Array[1..0305MaxConnections] of Byte; {the list of conns.}
+    end;
+
+This type is used extensively by the NetWare messaging services to
+represent a list of connections.
+;
+;-------------------------------------------------------------------
+!TOPIC 317 ConnInfoType
+!NOINDEX
+type
+  ConnInfoType =
+    record
+      ObjectID   : LongInt;     {logged in object's ID}
+      ObjectType : Word;        {logged object's type}
+      ObjectName : String[48];  {name of the object}
+      LoginDate  : NovDateType; {time/date the object logged on}
+    end;
+
+A record type used to return information about a specific connection number
+by the procedure 0358GetConnInfo.
+;
+;-------------------------------------------------------------------
+!TOPIC 318 IPXAddress
+!NOINDEX
+type
+  IPXAddress =
+    record
+      Network : LongInt; {high-low}
+      Node    : PhysicalNodeAddress;
+      Socket  : Word;
+    end;
+
+A record type to hold the three part internetwork addresses used by
+0339IPX and 0342SPX services.
+;
+;-------------------------------------------------------------------
+!TOPIC 319 IPXHeader
+!NOINDEX
+type
+  IPXHeader =
+    record
+      CheckSum         : Word;
+      Len              : Word;
+      TransportControl : Byte;
+      PacketType       : Byte;
+      Destination      : IPXAddress;
+      Source           : IPXAddress;
+    end;
+!WRAP
+
+This record type defines the header structure for all 0339IPX packets.
+;
+;-------------------------------------------------------------------
+!TOPIC 320 FragmentDescriptor
+!NOINDEX
+type
+  FragmentDescriptor =
+    record
+      Address : Pointer;  {the data}
+      Size    : Word;     {the size of the data}
+    end;
+
+A record type used to represent a buffer fragment descriptor for packets
+using 0339IPX or 0342SPX services.
+;
+;-------------------------------------------------------------------
+!TOPIC 321 IPXECB
+!NOINDEX
+type
+  IPXECB =
+    record
+      Link            : Pointer;  {used internally by IPX}
+      ESRAddress      : Pointer;  {the Event Service Routine}
+      InUse           : Byte;     {inuse semaphore}
+      CompletionCode  : Byte;     {error code}
+      SocketNumber    : Word;     {the session socket}
+      IPXWorkSpace    : LongInt;  {reserved for internal use}
+      DriverWorkSpace : Array[1..12] of Byte; {reserved}
+      ImmediateAddress: 0311PhysicalNodeAddress; {internet address}
+      FragmentCount   : Word;     {the number of buffers}
+      FD1             : 0320FragmentDescriptor; {buffer 1}
+      FD2             : FragmentDescriptor; {buffer 2}
+      FD3             : FragmentDescriptor; {buffer 3}
+      FD4             : FragmentDescriptor; {buffer 4}
+    end;
+
+The event control block used by 0339IPX and 0342SPX services.
+;
+;-------------------------------------------------------------------
+!TOPIC 322 AESECB
+!NOINDEX
+type
+  AESECB =
+    record
+      Link            : Pointer;
+      ESRAddress      : Pointer;
+      InUse           : Byte;
+      AESWorkSpace    : Array[1..5] of Byte;
+    end;
+
+The event control block used by the Asynchronous Event Scheduler (AES).
+;
+;-------------------------------------------------------------------
+!TOPIC 323 IPXRec
+!NOINDEX
+type
+  IPXRec =
+    record
+      IPXHead : 0319IPXHeader;
+      ECB     : 0321IPXECB;
+    end;
+
+A record type combining an 0339IPX header and an event control block.
+;
+;-------------------------------------------------------------------
+!TOPIC 324 SPXStatusBlock
+!NOINDEX
+type
+  SPXStatusBlock =
+    record
+      State                   : Byte;
+      Flag                    : Byte;
+      SourceConn              : Word; {high-low}
+      DestConn                : Word; {high-low}
+      SequenceNum             : Word; {high-low}
+      AckNum                  : Word; {high-low}
+      AllocNum                : Word; {high-low}
+      RemoteAckNum            : Word; {high-low}
+      RemoteAllocNum          : Word; {high-low}
+      ConnSocket              : Word;
+      ImmediateAdd            : PhysicalNodeAddress;
+      Destination             : IPXAddress;
+      RetransmitCount         : Word; {high-low}
+      EstimatedRoundTripDelay : Word; {high-low}
+      RetransmittedPackets    : Word; {high-low}
+      SuppressedPackets       : Word; {high-low}
+    end;
+!WRAP
+
+This record type is used by the 0430SPXConnStatus function.
+;
+;-------------------------------------------------------------------
+!TOPIC 325 SPXHeader
+!NOINDEX
+type
+  SPXHeader =
+    record
+      IPXPacket       : 0319IPXHeader;
+      ConnectControl  : Byte;
+      DataStreamType  : Byte;
+      SourceConnID    : Word;
+      DestConnID      : Word;
+      Sequence        : Word;
+      Acknowledge     : Word;
+      Allocation      : Word;
+    end;
+
+A record type used represent the header record of an 00342SPX packet.
+;
+;-------------------------------------------------------------------
+!TOPIC 326 PoolECB
+!NOINDEX
+type
+  PoolECB =
+    record
+      ECB    : 0321IPXECB;
+      Header : 0325SPXHeader;
+      Data   : Pointer;
+    end;
+
+A record type used by the 0342SPX pool management system.
+;
+;-------------------------------------------------------------------
+!TOPIC 327 ECBPtr
+!NOINDEX
+type
+  ECBPtr = ^IPXECB;
+
+A pointer an IPX event control block.
+;
+;-------------------------------------------------------------------
+!TOPIC 328 SPXPool
+!NOINDEX
+type
+  SPXPool    = Array[1..0344MaxECBPool] of 0326PoolECB;
+  SPXPoolPtr = ^SPXPool;
+
+Types used to define the listen pool.
+;
+;-------------------------------------------------------------------
+!TOPIC 329 SPXPoolQueue
+!NOINDEX
+type
+  SPXPoolQueue     = Array[1..0344MaxECBPool] of Byte;
+  SPXPoolQueuePtr  = ^SPXPoolQueue;
+
+Types used to implement a queue of pool indexes.
+;
+;-------------------------------------------------------------------
+!TOPIC 330 SPXPoolRec
+!NOINDEX
+type
+  SPXPoolRec =
+    record
+      NumInPool     : Byte;
+      DataSize      : Word;
+      Pool          : 0328SPXPoolPtr;
+      PoolQueue     : SPXPoolQueuePtr;
+      PoolQP        : Byte; {queue pointer}
+      PoolQS        : Byte; {queue size}
+      PoolQO        : Byte; {queue origin}
+      QueueOverflow : Boolean;
+    end;
+
+A record type used to hold information about a listen pool.
+;
+;-------------------------------------------------------------------
+!TOPIC 331 SPXRec
+!NOINDEX
+type
+  SPXRec =
+    record
+      ConnID : Word;
+      SPXHead : 0325SPXHeader;
+      ECB : 0321IPXECB;
+      PoolRec : 0330SPXPoolRec;
+    end;
+
+A high level record type used to encapsulate information needed to
+communicate using the NetWare unit's 0342SPX routines.
+;
+;-------------------------------------------------------------------
+!TOPIC 332 TargetType
+!NOINDEX
+type
+  TargetType =
+    record
+      IPXAdd : 0318IPXAddress;
+      TargetNode : 0311PhysicalNodeAddress;
+    end;
+
+A record type used by the 0417IPXGetLocalTarget function.
+;
+;-------------------------------------------------------------------
+!TOPIC 333 IPXLocation
+!NOINDEX
+var
+  IPXLocation : Pointer;
+
+Set by the NetWare unit's initialization code to point to the address in
+memory of the 0339IPX command dispatcher, or NIL if IPX services are
+not available.
+;
+;-------------------------------------------------------------------
+!TOPIC 334 DefaultServerInfo
+!NOINDEX
+var
+  DefaultServerInfo : ServerInformation;
+
+Set by the NetWare unit's initialization code to contain information
+about the default file server. This structure will be zero filled if the
+NetWare shell is not installed.
+;
+;-------------------------------------------------------------------
+!TOPIC 335 Transaction Tracking
+!NOINDEX
+!NOSEARCH
+The following routines relate to NetWare Transaction Tracking Services
+(TTS):
+
+  0397TTSAbort                       0403TTSAvailable
+  0398TTSBegin                       0404TTSDisable
+  0405TTSEnable                      0399TTSEnd
+  0401TTSGetAppThresh                0402TTSGetWSThresh
+  0400TTSStatus
+;
+;-------------------------------------------------------------------
+!TOPIC 336 Printer services
+!NOINDEX
+!NOSEARCH
+The following routines relate to NetWare printer services:
+
+  0372CancelLPTCapture               0373EndLPTCapture
+  0374FlushLPTCapture                0375GetDefaultLocalPrinter
+  0382GetBannerUser                  0381GetPrinterStatus
+  0384GetPrintJobFlags               0378LPTCaptureActive
+  0383SetBannerUser                  0376SetDefaultLocalPrinter
+  0385SetPrintJobFlags               0380SpecifyCaptureFile
+  0379SpoolExistingFile              0377StartLPTCapture
+;
+;-------------------------------------------------------------------
+!TOPIC 337 Basic messaging
+!NOINDEX
+!NOSEARCH
+The following routines relate to NetWare messaging services. Be
+warned the many of these services are no longer supported by
+NetWare 386.
+
+  0387BroadcastToConsole             0396CheckMessagePipe
+  0395CloseMessagePipe               0390GetBroadcastMode
+  0388GetBroadcastMsg                0394GetMessagePipe
+  0386LogNetWorkMessage              0392OpenMessagePipe
+  0389SendBroadcastMsg               0393SendMessagePipe
+  0391SetBroadcastMode
+;
+;-------------------------------------------------------------------
+!TOPIC 338 Advanced messaging
+!NOINDEX
+!NOSEARCH
+There are two type of NetWare advanced peer-to-peer messaging services.
+Datagram services are implemented using IPX (Internetwork Packet
+eXchange), and session services are implemented using SPX (Sequential
+Packet eXchange).
+
+  0339IPX                            0342SPX
+;
+;-------------------------------------------------------------------
+!TOPIC 339 IPX
+!NOINDEX
+!NOSEARCH
+IPX stands for Internetwork Packet eXchange protocol. It is Novell's
+implementation of the Internetwork Datagram Packet Protocol designed by
+Xerox. Applications running under versions of NetWare that support
+IPX can communicate directly with other workstations, servers or devices.
+
+The NetWare unit implements IPX routines ranging from low to high
+levels of integration. The low level routines are simple Pascal procedures
+and functions that call the NetWare IPX services directly. The higher
+level routines isolate the programmer from the details of forming IPX
+packets. Application developers should use the high level routines. The low
+level routines all end with the word Prim (as in IPXSendPrim).
+
+The following routines relate to IPX services:
+
+  0420IPXAssignUniqueSocket          0422IPXCancelEvent
+  0419IPXCloseSocket                 0421IPXEventComplete
+  0416IPXGetIntervalMarker           0417IPXGetLocalTarget
+  0413IPXInternetAddress             0424IPXListen
+  0418IPXOpenSocket                  0412IPXRelinquish
+  0414IPXScheduleEvent               0415IPXScheduleSpecialEvent
+  0423IPXSend                        0406IPXServicesAvail
+
+  0340IPX error codes                0341IPX primitive routines
+;
+;-------------------------------------------------------------------
+!TOPIC 340 IPX error codes
+!NOINDEX
+!NOSEARCH
+The following error code constants that relate to 0339IPX services are
+defined:
+
+const
+  IPXSuccess            = 0;
+  IPXDataTooLarge       = 1;   {user specified data is larger
+                                than maximum}
+  IPXSocketAlreadyOpen  = $FF; {attempted to open already open socket}
+  IPXSocketTableFull    = $FE; {this connection may not have any
+                                more open any more sockets}
+  IPXCancelled          = $FC; {the event was cancelled}
+  IPXMalformedPacket    = $FD; {packet not proper size and/or format}
+  IPXPacketUndeliverable= $FE; {can not deliver the packet}
+  IPXPhysicalError      = $FF; {hardware failure}
+  IPXPacketOverflow     = $FD; {more data received than buffer size
+                                specified}
+  IPXSocketNotOpen      = $FF; {the socket for communications is not open}
+
+;
+;-------------------------------------------------------------------
+!TOPIC 341 IPX primitive routines
+!NOINDEX
+!NOSEARCH
+The following routines are intended for internal use by the higher level
+routines indexed under the topic 0339IPX:
+
+  0411IPXCancelEventPrim             0409IPXCloseSocketPrim
+  0408IPXListenPrim                  0410IPXOpenSocketPrim
+  0407IPXSendPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 342 SPX
+!NOINDEX
+!NOSEARCH
+Advanced NetWare 2 implements a high level node-to-node communication
+facility called SPX (Sequenced Packet eXchange Protocol). SPX is
+based on the Sequenced Packet Protocol defined by Xerox. IPX
+implements NetWare datagram services, and SPX implements the higher
+level session services.
+
+Building upon IPX services, SPX provides a guaranteed delivery system
+for packets of data. SPX automatically selects appropriate timeout and
+retransmission counts based on the physical characteristics of the network
+hardware. Hence, applications using SPX need not be concerned with the
+details of the guaranteed delivery system.
+
+A receiver of SPX messages must make more than one event control block
+available to handle incoming messages. The SPX routines in the NetWare
+unit make this easy by automatically managing a pool of event control
+blocks. When an application establishes an SPX connection, it simply
+specifies the number of event control blocks and the maximum size of each
+data packet. The demonstration program NRECEIVE is a good example of the
+use of these pools and their associated procedures and functions.
+
+The following routines relate to SPX services:
+
+  0438SPXAbortConn                   0430SPXConnStatus
+  0434SPXEstablishConn               0433SPXEventComplete
+  0446SPXListenCount                 0435SPXListenForConn
+  0440SPXListenPooled                0439SPXPoolCancelAll
+  0442SPXPoolDataPtr                 0441SPXPoolECBPtr
+  0443SPXPoolStartListening          0445SPXReplenishAll
+  0444SPXReplenishPool               0436SPXSend
+  0425SPXServicesAvail               0437SPXTerminateConn
+
+  0343SPX error codes                0345SPX primitive routines
+;
+;-------------------------------------------------------------------
+!TOPIC 343 SPX error codes
+!NOINDEX
+!NOSEARCH
+The following error code constants relate to 0342SPX services:
+
+const
+  SPXEndOfMessage = $10;
+  SPXEndOfConn    = $FE;
+;
+;-------------------------------------------------------------------
+!TOPIC 344 MaxECBPool
+!NOINDEX
+const
+  MaxECBPool = 32;
+
+Maximum number of SPX event control blocks NETWARE can manage simultaneously.
+;
+;-------------------------------------------------------------------
+!TOPIC 345 SPX primitive routines
+!NOINDEX
+!NOSEARCH
+The following routines are intended for internal use by the higher level
+routines indexed under the topic 0342SPX:
+
+  0429SPXAbortConnPrim               0426SPXEstablishConnPrim
+  0427SPXListenForConnPrim           0432SPXListenPrim
+  0431SPXSendPrim                    0428SPXTerminateConnPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 346 Miscellaneous
+!NOINDEX
+!NOSEARCH
+The NetWare operating system has an impressive list of application
+program interfaces. The NetWare unit implements many of the more useful
+APIs. The following routines do not fit neatly into any of the other
+categories:
+
+  0447AsciiZ2Str                     0354ConsolePriv
+  0359GetConnFromName                0358GetConnInfo
+  0355GetConnNo                      0366GetDriverConfiguration
+  0356GetInternetAddress             0357GetObjConnNumbers
+  0352GetServerDateTime              0365GetServerInfo
+  0353GetWSInfo                      0370IsLockModeExtended
+  0347NetWareLoaded                  0448NetWareSwapLong
+  0361PreferredServerConnNo          0363PrimaryServerConnNo
+  0360ServerConnNo                   0364ServerNameTable
+  0371SetLockMode                    0362SetPreferredServerConn
+;
+;-------------------------------------------------------------------
+!TOPIC 347 NetWareLoaded
+!NOINDEX
+function 0302NetWare.NetWareLoaded(var LoggedOn : Boolean) : Boolean;
+
+Returns True if NetWare shell is loaded at the calling workstation. If
+shell is loaded, then LoggedOn will be true if a user is logged on.
+;
+;-------------------------------------------------------------------
+!TOPIC 348 GetExtFAttr
+!NOINDEX
+function 0302NetWare.GetExtFAttr(Path : PathName;
+                             var Attributes : Byte) : Byte;
+
+Returns a file's NetWare extended file attribute.
+
+!NOWRAP
+Meaning of Attributes:
+7   6   5   4   3   2   1   0
+³   ³   ³   ³       ³   ³   ³
+³   ³   ³   ³       ÀÄÄÄÁÄÄÄÁÄÄÄÄÄÄ Search mode  [210]
+³   ³   ³   ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ transactional bit [4]
+³   ³   ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ Indexing bit [5]
+³   ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ Read Audit bit [6]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ Write Audit bit [7]
+
+Function returns error code:
+  0  - Success
+  2  - File not found
+  18 - No more files (requesting workstation does not
+                      have search rights)
+!WRAP
+
+See also:  0349SetExtFAttr
+;
+;-------------------------------------------------------------------
+!TOPIC 349 SetExtFAttr
+!NOINDEX
+function 0302NetWare.SetExtFAttr(Path : PathName; Attr : Byte) : Byte;
+
+Sets a file's NetWare extended file attribute.
+
+!NOWRAP
+Meaning of Attributes:
+7   6   5   4   3   2   1   0
+³   ³   ³   ³       ³   ³   ³
+³   ³   ³   ³       ÀÄÄÄÁÄÄÄÁÄÄÄÄÄÄ Search mode  [210]
+³   ³   ³   ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ transactional bit [4]
+³   ³   ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ Indexing bit [5]
+³   ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ Read Audit bit [6]
+ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ Write Audit bit [7]
+
+Function returns error code:
+  0  - Success
+  2  - File not found
+  5  - Access denied
+!WRAP
+
+See also:  0348GetExtFAttr
+;
+;-------------------------------------------------------------------
+!TOPIC 350 FileIsShareable
+!NOINDEX
+function 0302NetWare.FileIsShareable(Path : PathName; var FAttr : Word;
+                                 var ErrCode : Word) : Boolean;
+
+Return True if file is flagged as shareable, all file attributes in
+FAttr.
+
+See also:  0351MakeFileShareable
+;
+;-------------------------------------------------------------------
+!TOPIC 351 MakeFileShareable
+!NOINDEX
+function 0302NetWare.MakeFileShareable(Path : PathName) : Byte;
+
+Flags a file as shareable. Returns zero if successful, or DOS error code
+if not.
+
+See also:  0350FileIsShareable
+;
+;-------------------------------------------------------------------
+!TOPIC 352 GetServerDateTime
+!NOINDEX
+procedure 0302NetWare.GetServerDateTime(var Year : Word;
+                                    var Month, Day, Hour : Byte;
+                                    var Minute, Second : Byte;
+                                    var WeekDay : DayOfTheWeek);
+
+Gets the network time of day, day, month and year from the file
+server.
+
+See also:  0304Declarations
+
+;
+;-------------------------------------------------------------------
+!TOPIC 353 GetWSInfo
+!NOINDEX
+procedure 0302NetWare.GetWSInfo(var ShellMajor, ShellMinor,
+                            ShellRevision : Byte;
+                            var OSType, OSVer, Hardware : String);
+
+Gets the NetWare shell version number and other info from the server.
+;
+;-------------------------------------------------------------------
+!TOPIC 354 ConsolePriv
+!NOINDEX
+function 0302NetWare.ConsolePriv : Boolean;
+
+Returns True if this station has console privileges.
+;
+;-------------------------------------------------------------------
+!TOPIC 355 GetConnNo
+!NOINDEX
+function 0302NetWare.GetConnNo : Byte;
+
+Returns connection number of requesting workstation
+(1..0305MaxConnections).
+
+See also:  0358GetConnInfo  0356GetInternetAddress  0357GetObjConnNumbers
+;
+;-------------------------------------------------------------------
+!TOPIC 356 GetInternetAddress
+!NOINDEX
+procedure 0302NetWare.GetInternetAddress(ConnNo : Byte;
+                                     var InternetAdd : IPXAddress);
+
+Returns the IPX Address for the specified connection number. The IPX
+address consists of the Network number, the physical node address, and the
+socket. The socket returned by this function is the socket that the
+NetWare shell uses to communicate with the file server. This socket must
+not be used by other applications.
+
+See also:  0355GetConnNo    0318IPXAddress
+;
+;-------------------------------------------------------------------
+!TOPIC 357 GetObjConnNumbers
+!NOINDEX
+procedure 0302NetWare.GetObjConnNumbers(ObjectName : ObjectStr;
+                                    ObjectType : BinderyObject;
+                                    var Conns : ConnectionList);
+
+Return all connections with the specified ObjectName and ObjectType
+logged in.
+
+See also:  0355GetConnNo
+;
+;-------------------------------------------------------------------
+!TOPIC 358 GetConnInfo
+!NOINDEX
+procedure 0302NetWare.GetConnInfo(ConnNo : Byte;
+                              var ConnInfo : 0317ConnInfoType);
+
+Get information about the object logged on to a given connection. The
+information returned includes the object's ID, the object type, the
+object's name, and the time and date it logged on to the connection.
+
+See also:  0359GetConnFromName  0355GetConnNo
+;
+;-------------------------------------------------------------------
+!TOPIC 359 GetConnFromName
+!NOINDEX
+function 0302NetWare.GetConnFromName(LoConn, HiConn : Byte;
+                                 ObjName : String) : Byte;
+
+Search connection numbers LoConn to HiConn looking for a user with
+ObjName. Return the connection number of the first connection found with
+that user logged on. If no connection is found with ObjName as a user,
+then the function returns zero. LoConn and HiConn must lie in the range
+of 1 to 0305MaxConnections.
+
+See also:  0358GetConnInfo           0305MaxConnections
+;
+;-------------------------------------------------------------------
+!TOPIC 360 ServerConnNo
+!NOINDEX
+function 0302NetWare.ServerConnNo : Byte;
+
+Returns connection number of default file server (1..8).
+
+See also:
+  0365GetServerInfo         0361PreferredServerConnNo       0363PrimaryServerConnNo
+  0364ServerNameTable       0362SetPreferredServerConn
+;
+;-------------------------------------------------------------------
+!TOPIC 361 PreferredServerConnNo
+!NOINDEX
+function 0302NetWare.PreferredServerConnNo : Byte;
+
+Returns the connection number of the preferred file server (1..8).
+
+See also:
+  0365GetServerInfo         0363PrimaryServerConnNo         0360ServerConnNo
+  0364ServerNameTable       0362SetPreferredServerConn
+;
+;-------------------------------------------------------------------
+!TOPIC 362 SetPreferredServerConn
+!NOINDEX
+procedure 0302NetWare.SetPreferredServerConn(ServConnNo : Byte);
+
+Sets the preferred file server. ServConnNo must be an active file
+server that the workstation has previously attached to and logged into. The
+value of the preferred file server is automatically reset to 0 (meaning
+no preferred file server selected, so default server is used) when an
+application terminates.
+
+See also:
+  0365GetServerInfo           0361PreferredServerConnNo     0363PrimaryServerConnNo
+  0360ServerConnNo            0364ServerNameTable
+;
+;-------------------------------------------------------------------
+!TOPIC 363 PrimaryServerConnNo
+!NOINDEX
+function 0302NetWare.PrimaryServerConnNo : Byte;
+
+Returns the connection number of the primary file server.
+
+See also:
+  0365GetServerInfo       0361PreferredServerConnNo      0360ServerConnNo
+  0364ServerNameTable     0362SetPreferredServerConn
+;
+;-------------------------------------------------------------------
+!TOPIC 364 ServerNameTable
+!NOINDEX
+procedure 0302NetWare.ServerNameTable(var Servers : FileServerNameTable);
+
+Returns the NetWare file server name table.
+
+See also:
+  0365GetServerInfo          0361PreferredServerConnNo         0363PrimaryServerConnNo
+  0360ServerConnNo           0362SetPreferredServerConn
+  0314FileServerNameTable
+;
+;-------------------------------------------------------------------
+!TOPIC 365 GetServerInfo
+!NOINDEX
+procedure 0302NetWare.GetServerInfo(var ServerInfo : ServerInformation);
+
+Returns assorted information about the file server.
+
+See also:
+  0361PreferredServerConnNo          0363PrimaryServerConnNo
+  0360ServerConnNo                   0364ServerNameTable
+  0362SetPreferredServerConn         0309ServerInformation
+;
+;-------------------------------------------------------------------
+!TOPIC 366 GetDriverConfiguration
+!NOINDEX
+function 0302NetWare.GetDriverConfiguration(LanBoard : Byte;
+                                        var Driver : DriverInformation)
+  : Boolean;
+
+Returns information about the LAN's driver configuration.
+;
+;-------------------------------------------------------------------
+!TOPIC 367 GetDirHandle
+!NOINDEX
+function 0302NetWare.GetDirHandle(Drive : Char; var StatusFlags : Byte)
+  : Byte;
+
+Returns directory handle and status flags for a drive.
+
+See also:  0369GetDirPath    0368GetDirRights    0307Status flags
+;
+;-------------------------------------------------------------------
+!TOPIC 368 GetDirRights
+!NOINDEX
+function 0302NetWare.GetDirRights(DirHandle : Byte; PathName : String;
+                              var Rights : Byte) : Byte;
+
+Returns the requesting workstation's effective directory rights.
+
+See also:  0367GetDirHandle    0369GetDirPath    0306Directory rights
+;
+;-------------------------------------------------------------------
+!TOPIC 369 GetDirPath
+!NOINDEX
+function 0302NetWare.GetDirPath(DirHandle : Byte;
+                            var DirPath : String) : Byte;
+
+Returns the pathname of the directory specified by DirHandle.
+
+See also:  0367GetDirHandle  0368GetDirRights
+;
+;-------------------------------------------------------------------
+!TOPIC 370 IsLockModeExtended
+!NOINDEX
+function 0302NetWare.IsLockModeExtended : Boolean;
+
+Returns True if using Advanced NetWare Extended Lock Mode, False if in
+Compatibility Lock Mode (for compatibility with NetWare 4.61 and
+prior).
+
+See also:  0371SetLockMode
+;
+;-------------------------------------------------------------------
+!TOPIC 371 SetLockMode
+!NOINDEX
+procedure 0302NetWare.SetLockMode(Extended : Boolean);
+
+Sets the lock mode. If Extended is True, then Extended Lock Mode is
+set, else Compatibility Lock Mode.
+
+See also:  0370IsLockModeExtended
+;
+;-------------------------------------------------------------------
+!TOPIC 372 CancelLPTCapture
+!NOINDEX
+function 0302NetWare.CancelLPTCapture : Byte;
+
+Abort capture of the default LPT device.
+
+See also:  0373EndLptCapture  0374FlushLptCapture  0377StartLptCapture
+;
+;-------------------------------------------------------------------
+!TOPIC 373 EndLPTCapture
+!NOINDEX
+function 0302NetWare.EndLPTCapture : Byte;
+
+End the capture of the default LPT device (like running ENDSPOOL or
+ENDCAP).
+
+See also:
+  0372CancelLptCapture          0374FlushLptCapture         0378LptCaptureActive
+  0380SpecifyCaptureFile        0377StartLptCapture
+;
+;-------------------------------------------------------------------
+!TOPIC 374 FlushLPTCapture
+!NOINDEX
+function 0302NetWare.FlushLPTCapture : Byte;
+
+Flush capture of the default LPT device (like running SPOOL or CAPTURE
+again while spooling).
+
+See also:  0372CancelLptCapture  0373EndLptCapture  0377StartLptCapture
+;
+;-------------------------------------------------------------------
+!TOPIC 375 GetDefaultLocalPrinter
+!NOINDEX
+function 0302NetWare.GetDefaultLocalPrinter : PrinterDevice;
+
+Get LPT device currently used as default by network for capture.
+
+See also:  0376SetDefaultLocalPrinter
+;
+;-------------------------------------------------------------------
+!TOPIC 376 SetDefaultLocalPrinter
+!NOINDEX
+procedure 0302NetWare.SetDefaultLocalPrinter(LPTNo : PrinterDevice);
+
+Sets LPT device used as default by network for capture.
+
+See also:  0375GetDefaultLocalPrinter
+;
+;-------------------------------------------------------------------
+!TOPIC 377 StartLPTCapture
+!NOINDEX
+function 0302NetWare.StartLPTCapture : Byte;
+
+Start capture of default LPT device (like running SPOOL or CAPTURE).
+
+See also:
+  0372CancelLptCapture          0373EndLptCapture           0374FlushLptCapture
+  0378LptCaptureActive          0380SpecifyCaptureFile
+;
+;-------------------------------------------------------------------
+!TOPIC 378 LPTCaptureActive
+!NOINDEX
+function 0302NetWare.LPTCaptureActive(var QueServer : Byte) : Boolean;
+
+Returns True if spooling is occurring now. If so, also returns the
+QueServer number.
+
+See also:  0373EndLptCapture  0377StartLptCapture
+;
+;-------------------------------------------------------------------
+!TOPIC 379 SpoolExistingFile
+!NOINDEX
+function 0302NetWare.SpoolExistingFile(FName : String) : Byte;
+
+Submits an existing file to the print queue (similar to the NetWare
+utility NPRINT). Returns 0 for success or $9C if invalid path (or file
+not on the file server).
+
+Novell no longer documents this function call, but it appears to be
+implemented on all current versions of NetWare.
+;
+;-------------------------------------------------------------------
+!TOPIC 380 SpecifyCaptureFile
+!NOINDEX
+function 0302NetWare.SpecifyCaptureFile(FName : String) : Byte;
+
+This function allows you to specify the file that the next capture is to
+use for spooling the printer data. The capture file is closed when a
+CancelLPTCapture, EndLPTCapture, or FlushLPTCapture is issued. The
+file is not queued for printing; this must be done explicitly by calling
+SpoolExistingFile. This function is useful for setting up your own print
+queuing routines. Possible function results are 0 for success, or $9C if
+invalid path (or path does not refer to a drive on the file server).
+
+See also:  0373EndLptCapture  0377StartLptCapture
+;
+;-------------------------------------------------------------------
+!TOPIC 381 GetPrinterStatus
+!NOINDEX
+procedure 0302NetWare.GetPrinterStatus(NovellPrinter : Byte;
+                                   var PrinterNo, FormType : Byte;
+                                   var OffLine, Stopped : Boolean);
+
+Returns assorted information about the default network printer.
+NovellPrinter is the number of the network printer to return the status of.
+The returned parameters are:
+
+  PrinterNo  - the server printer number (0, 1, 2, 3 or 4)
+  FormType   - the Form Type currently selected for this printer
+  OffLine    - True if printer is not online
+  Stopped    - True if printer is paused by NetWare
+;
+;-------------------------------------------------------------------
+!TOPIC 382 GetBannerUser
+!NOINDEX
+function 0302NetWare.GetBannerUser(var BannerUser : Str20) : Boolean;
+
+Returns the user name that is printed on the banner page.
+
+See also:  0383SetBannerUser
+;
+;-------------------------------------------------------------------
+!TOPIC 383 SetBannerUser
+!NOINDEX
+function 0302NetWare.SetBannerUser(UserName : Str20) : Boolean;
+
+Sets the user name that is printed on the banner page.
+
+See also:  0382GetBannerUser
+;
+;-------------------------------------------------------------------
+!TOPIC 384 GetPrintJobFlags
+!NOINDEX
+procedure 0302NetWare.GetPrintJobFlags(var PrintJob : PrintJobType);
+
+Returns the print job flags for the default network printer.
+
+See also:  0385SetPrintJobFlags      0304Declarations
+;
+;-------------------------------------------------------------------
+!TOPIC 385 SetPrintJobFlags
+!NOINDEX
+procedure 0302NetWare.SetPrintJobFlags(var PrintJob : PrintJobType);
+
+Sets the print job flags for the default network printer.
+
+See also:  0384GetPrintJobFlags      0304Declarations
+;
+;-------------------------------------------------------------------
+!TOPIC 386 LogNetWorkMessage
+!NOINDEX
+procedure 0302NetWare.LogNetWorkMessage(Message : Str80);
+
+Log the message to the network log.
+;
+;-------------------------------------------------------------------
+!TOPIC 387 BroadcastToConsole
+!NOINDEX
+procedure 0302NetWare.BroadcastToConsole(Message : Str80);
+
+Send a message to the console.
+;
+;-------------------------------------------------------------------
+!TOPIC 388 GetBroadcastMsg
+!NOINDEX
+procedure 0302NetWare.GetBroadcastMsg(var Message : Str80);
+
+Returns a broadcast message from the default file server if one is
+available. If a message is not available, Message will contain the empty
+string.
+
+See also:  0390GetBroadcastMode  0389SendBroadcastMsg  0391SetBroadcastMode
+;
+;-------------------------------------------------------------------
+!TOPIC 389 SendBroadcastMsg
+!NOINDEX
+procedure 0302NetWare.SendBroadcastMsg(Msg : BroadcastStr;
+                                   var Connect, Result : ConnectionList);
+
+Sends the broadcast message to connection list Connect and return a
+result code for each one in Result.
+
+!NOWRAP
+Result Codes:
+  00h  - Success
+  FCh  - Target station already holding message (message rejected)
+  FDh  - Bad connection number
+  FFh  - Failure, target connection invalid (message rejected)
+!WRAP
+
+See also:  0388GetBroadcastMsg  0390GetBroadcastMode  0391SetBroadcastMode
+;
+;-------------------------------------------------------------------
+!TOPIC 390 GetBroadcastMode
+!NOINDEX
+function 0302NetWare.GetBroadcastMode : Byte;
+
+Returns the current broadcast mode. The mode is interpreted as follows:
+
+!NOWRAP
+ÉÍÍÍÍÑÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+ºmode³ server ³ Shell               º
+ÌÍÍÍÍØÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹
+º 0  ³ Store  ³ Retrieve and displayº
+º 1  ³ Reject ³ Retrieve and displayº
+º 2  ³ Reject ³ Ignore              º
+º 3  ³ Store  ³ Ignore              º
+ÈÍÍÍÍÏÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+!WRAP
+
+See also:  0388GetBroadcastMsg  0389SendBroadcastMsg  0391SetBroadcastMode
+;
+;-------------------------------------------------------------------
+!TOPIC 391 SetBroadcastMode
+!NOINDEX
+procedure 0302NetWare.SetBroadcastMode(Mode : Byte);
+
+Sets the broadcast mode. The mode is interpreted as follows:
+
+!NOWRAP
+ÉÍÍÍÍÑÍÍÍÍÍÍÍÍÑÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ»
+ºmode³ server ³ Shell               º
+ÌÍÍÍÍØÍÍÍÍÍÍÍÍØÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¹
+º 0  ³ Store  ³ Retrieve and displayº
+º 1  ³ Reject ³ Retrieve and displayº
+º 2  ³ Reject ³ Ignore              º
+º 3  ³ Store  ³ Ignore              º
+ÈÍÍÍÍÏÍÍÍÍÍÍÍÍÏÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+!WRAP
+
+See also:  0388GetBroadcastMsg  0390GetBroadcastMode  0389SendBroadcastMsg
+;
+;-------------------------------------------------------------------
+!TOPIC 392 OpenMessagePipe
+!NOINDEX
+procedure 0302NetWare.OpenMessagePipe(var Connect, Result : ConnectionList);
+
+Attempts to open a message pipe with the connections specified in
+Connect, and returns an error code in Result for each.
+
+See also:
+  0396CheckMessagePipe          0395CloseMessagePipe        0394GetMessagePipe
+  0393SendMessagePipe
+;
+;-------------------------------------------------------------------
+!TOPIC 393 SendMessagePipe
+!NOINDEX
+procedure 0302NetWare.SendMessagePipe(Msg : MessageStr;
+                                  var Connect, Result : ConnectionList);
+
+Attempts to send a message to all connections specified in Connect, and
+returns an error in Result for each.
+
+!NOWRAP
+Result codes in Result:
+  00h  - Success (message entered into pipe)
+  FCh  - Pipe Full (message rejected)
+  FEh  - Incomplete pipe (pipe doesn't exist)
+  FFh  - Failure (invalid pipe or connection number)
+!WRAP
+
+See also:
+  0396CheckMessagePipe          0395CloseMessagePipe        0394GetMessagePipe
+  0392OpenMessagePipe
+;
+;-------------------------------------------------------------------
+!TOPIC 394 GetMessagePipe
+!NOINDEX
+procedure 0302NetWare.GetMessagePipe(var SourceConn : Byte;
+                                 var Msg : MessageStr);
+
+Retrieves a message from connection SourceConn if one is available, if
+not, Msg will be the empty string.
+
+See also:  0396CheckMessagePipe  0395CloseMessagePipe  0393SendMessagePipe
+;
+;-------------------------------------------------------------------
+!TOPIC 395 CloseMessagePipe
+!NOINDEX
+function 0302NetWare.CloseMessagePipe(var Connect,
+                                  Result : ConnectionList) : Byte;
+
+Attempts to close a message pipe with each connection in Connect, and
+returns an error code in Result for each.
+
+!NOWRAP
+Return Code:
+  00h  - Success
+  FCh  - Message Queue is full
+
+Result codes in Result:
+  00h  - Success (message pipe broken)
+  FDh  - Failure (target connection invalid, logged out?)
+  FFh  - No pipe exists
+!WRAP
+
+See also:
+  0396CheckMessagePipe          0394GetMessagePipe          0392OpenMessagePipe
+  0393SendMessagePipe
+;
+;-------------------------------------------------------------------
+!TOPIC 396 CheckMessagePipe
+!NOINDEX
+procedure 0302NetWare.CheckMessagePipe(var Connect, Result : ConnectionList);
+
+Returns the status of message pipe for each connection in Connect.
+
+!NOWRAP
+Result codes in Result:
+  00h  - Success (message pipe exists)
+  FEh  - Incomplete pipe (pipe doesn't exist)
+  FFh  - Failure (invalid pipe or connection number)
+!WRAP
+
+See also:
+  0395CloseMessagePipe          0394GetMessagePipe          0392OpenMessagePipe
+  0393SendMessagePipe
+;
+;-------------------------------------------------------------------
+!TOPIC 397 TTSAbort
+!NOINDEX
+function 0302NetWare.TTSAbort : Byte;
+
+Abort an explicit transaction.
+
+!NOWRAP
+Return code:
+  00h  - success
+  FDh  - TTS Disabled
+  FEh  - Transaction aborted, records left locked
+  FFh  - no explicit transaction active
+!WRAP
+
+See also:  0398TTSBegin  0399TTSEnd  0400TTSStatus
+;
+;-------------------------------------------------------------------
+!TOPIC 398 TTSBegin
+!NOINDEX
+function 0302NetWare.TTSBegin : Byte;
+
+Begin an explicit transaction.
+
+!NOWRAP
+Return code:
+  00h  - Success
+  96h  - Out of dynamic workspace
+  FEh  - Implicit transaction active (active implicit turned into
+         explicit)
+  FFh  - Explicit Transaction active
+!WRAP
+
+See also:  0397TTSAbort  0399TTSEnd  0400TTSStatus
+;
+;-------------------------------------------------------------------
+!TOPIC 399 TTSEnd
+!NOINDEX
+function 0302NetWare.TTSEnd(var ID : LongInt) : Byte;
+
+End an explicit transaction. An ID number is returned that can be used
+with the TTSStatus call to determine whether the transaction has actually
+been committed to disk.
+
+!NOWRAP
+Return code:
+  00h  - Success
+  FDh  - TTS Disabled
+  FEh  - Tranaction ended, records left locked
+  FFh  - No explicit transaction active
+!WRAP
+
+See also:  0397TTSAbort  0398TTSBegin  0400TTSStatus
+;
+;-------------------------------------------------------------------
+!TOPIC 400 TTSStatus
+!NOINDEX
+function 0302NetWare.TTSStatus(ID : LongInt) : Boolean;
+
+Returns True if referenced transaction has been committed to disk.
+
+See also:  0397TTSAbort  0398TTSBegin  0399TTSEnd
+;
+;-------------------------------------------------------------------
+!TOPIC 401 TTSGetAppThresh
+!NOINDEX
+procedure 0302NetWare.TTSGetAppThresh(var Logical, Physical : Byte);
+
+Returns the application's logical and physical threshold values for
+implicit transaction tracking.
+
+See also:  0402TTSGetWSThresh
+;
+;-------------------------------------------------------------------
+!TOPIC 402 TTSGetWSThresh
+!NOINDEX
+procedure 0302NetWare.TTSGetWSThresh(var Logical, Physical : Byte);
+
+Returns the workstation's logical and physical threshold values for
+implicit transaction tracking.
+
+See also:  0401TTSGetAppThresh
+;
+;-------------------------------------------------------------------
+!TOPIC 403 TTSAvailable
+!NOINDEX
+function 0302NetWare.TTSAvailable : Boolean;
+
+Returns True if Transaction Tracking Services are available.
+;
+;-------------------------------------------------------------------
+!TOPIC 404 TTSDisable
+!NOINDEX
+function 0302NetWare.TTSDisable : Boolean;
+
+Disables TTS services. Returns True if TTS services successfully
+disabled.
+
+See also:  0405TTSEnable
+;
+;-------------------------------------------------------------------
+!TOPIC 405 TTSEnable
+!NOINDEX
+function 0302NetWare.TTSEnable : Boolean;
+
+Enables TTS services. Returns True if TTS services successfully
+enabled. Note: You should always determine that TTS services are available
+(by calling TTSAvailable) before issuing a TTSEnable. NetWare will
+often report True for a TTSEnable if it is called but TTS is not
+available.
+
+See also:  0404TTSDisable
+;
+;-------------------------------------------------------------------
+!TOPIC 406 IPXServicesAvail
+!NOINDEX
+function 0302NetWare.IPXServicesAvail : Boolean;
+
+This function returns True if IPX services are available.
+;
+;-------------------------------------------------------------------
+!TOPIC 407 IPXSendPrim
+!NOINDEX
+procedure 0302NetWare.IPXSendPrim(var ECB);
+
+This procedure prepares an ECB and the IPX header of its associated
+packet and passes the ECB to the network drivers to initiate a send
+operation. This function returns immediately to the calling application. In
+other words, the send event cannot be assumed completed when this function
+returns. When the send event has been completed by the driver, the InUse
+flag of the ECB is reset to 0 (it is $FF while the send event is
+pending). If the ESRAddress pointer within the IPXECB is not Nil, then
+the Event Service Routine (the code pointed to by the ESRAddress field)
+will be called upon completion of the send request (see documentation
+regarding the limitations of ESRs).
+
+!NOWRAP
+Valid CompletionCode values are:
+  $00  = The send completed successfully.
+  $FC  = The send request was cancelled by an IPXCloseSocket or an
+         IPXCancelEvent function call (IPXEventCancelled).
+  $FD  = Malformed Packet - either the packet was less than 30 bytes,
+         the first fragment was too small for the header, or the
+         fragment count was zero (IPXMalformedPacket).
+  $FE  = Packet is undeliverable (IPXPacketUndeliverable).
+  $FF  = Physically unable to deliver packet, possibly due to hardware
+         or network failure (IPXPhysicalError).
+!WRAP
+
+This routine may not be called under Windows.
+
+See also:  0408IPXListenPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 408 IPXListenPrim
+!NOINDEX
+procedure 0302NetWare.IPXListenPrim(var ECB);
+
+This procedure delivers the specified ECB to the IPX driver for the purpose
+of receiving an IPX packet. It returns immediately to the calling
+application. This procedure only delivers the ECB to the driver; it does
+not wait for delivery of the packet. While the driver is awaiting receipt
+of a packet after a call to IPXListenPrim, the InUse field of the
+passed ECB is set to $FE. This field remains set until a receive event
+occurs, the request is cancelled, or IPX deems the ECB to be unusable.
+
+After the InUse flag is reset to zero, the CompletionCode field of the
+ECB contains one of the following values:
+
+  $00  = The Packet was received successfully.
+  $FC  = The receive request was cancelled by an IPXCloseSocket or an
+         0422IPXCancelEvent function call (IPXEventCancelled).
+  $FD  = Packet Overflow.  A packet was received, but the ECB's fragment
+         count was zero, or the space defined by the ECB's fragment
+         descriptor list was not large enough to contain the entire
+         packet (IPXPacketOverflow)
+  $FF  = Socket specified to listen on in ECB was not open
+         (IPXSocketNotOpen)
+
+The received packet is placed into memory based on the ECB's fragment
+descriptor list. See the documentation regarding Fragment Descriptor Lists.
+
+This routine may not be called under Windows.
+
+See also:  0407IPXSendPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 409 IPXCloseSocketPrim
+!NOINDEX
+procedure 0302NetWare.IPXCloseSocketPrim(SocketNum : Word);
+
+This function closes the socket specified by SocketNum (no hi-lo swapping
+is performed).
+
+See also:  0410IPXOpenSocketPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 410 IPXOpenSocketPrim
+!NOINDEX
+function 0302NetWare.IPXOpenSocketPrim(RequestedSocket : Word;
+                                   Forever : Boolean) : Byte;
+
+Opens a socket (no hi-lo swapping is performed).
+
+See also:  0409IPXCloseSocketPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 411 IPXCancelEventPrim
+!NOINDEX
+function 0302NetWare.IPXCancelEventPrim(var ECB) : Byte;
+
+This function cancels the event specified by the ECB. This function
+cancels any kind of event (Send, Listen, Schedule or Reschedule, or special
+purpose event). If the ECB was in use by IPX, the InUse field of the
+ECB is set to zero, and the CompletionCode field is set to $FC. The
+ECB is then available for reuse by the application. There is one case
+where a valid ECB cannot be cancelled. This is when the driver is in the
+process of transfering data to or from the fragment descriptor list
+descibed by the ECB. In this case, a function CompletionCode of $F9 is
+returned. When an event is cancelled, its associated ESR is not called.
+This function returns the CompletionCode as its function result.
+
+Valid values for CompletionCode are:
+
+  $00  = Event was successfully cancelled
+  $FF  = the ECB was not in use by IPX or AES (Async Event Scheduler)
+  $F9  = ECB was in use but unable to cancel
+
+This routine may not be called under Windows.
+;
+;-------------------------------------------------------------------
+!TOPIC 412 IPXRelinquish
+!NOINDEX
+procedure 0302NetWare.IPXRelinquish;
+
+This procedure serves one of two purposes, depending on whether it is
+invoked from a file server/bridge, or a workstation. On a file server or
+network bridge, this function releases the machine to the server or bridge
+process. In other words, the application that calls it is temporarily
+suspended so the server or bridge process may have the machine immediately.
+This procedure must be invoked at least once during each iteration of an
+idle loop to ensure that the server or bridge is performing at maximum
+efficiency. When this procedure is called from a workstation, it invokes a
+polling procedure that allows the reception and sending of internetwork
+packets. For those drivers without hardware interrupts, frequent calls to
+this procedure are crucial to the operation of applications that rely on
+packet exchange.
+;
+;-------------------------------------------------------------------
+!TOPIC 413 IPXInternetAddress
+!NOINDEX
+procedure 0302NetWare.IPXInternetAddress(var Address : IPXAddress);
+
+This procedure returns the internetwork address of the node (workstation)
+on which it is executing. The first two fields of the 0318IPXAddress are
+filled in. The third field of an 0318IPXAddress type, the Socket, is
+not returned.
+;
+;-------------------------------------------------------------------
+!TOPIC 414 IPXScheduleEvent
+!NOINDEX
+procedure 0302NetWare.IPXScheduleEvent(DelayTime : Word; var ECB : IPXECB);
+
+Under Windows
+!LINE
+procedure IPXScheduleEvent(DelayTime : Word; ECB : WinIPXECB);
+
+This procedure schedules an IPX event to occur after the specified time
+interval expires. The time interval is specified in clock ticks. See the
+Novell API Reference Volume 2 for info on AES and event service
+routines.
+
+See also:  0415IPXScheduleSpecialEvent
+;
+;-------------------------------------------------------------------
+!TOPIC 415 IPXScheduleSpecialEvent
+!NOINDEX
+procedure 0302NetWare.IPXScheduleSpecialEvent(DelayTime : Word;
+                                          var ECB : AESECB);
+
+Under Windows
+!LINE
+procedure IPXScheduleSpecialEvent(DelayTime : Word;
+                                  ECB : WinAESECB);
+
+This procedure schedules a special purpose, application defined event to
+occur after a specified time interval expires. Since the interval range is
+specified as a word, it may be between 0 and 65,535 clock ticks (about 60
+minutes). See the Novell API Reference Volume 2 for info on AES and
+event service routines.
+
+See also:  0414IPXScheduleEvent
+;
+;-------------------------------------------------------------------
+!TOPIC 416 IPXGetIntervalMarker
+!NOINDEX
+function 0302NetWare.IPXGetIntervalMarker : Word;
+
+This function returns a timing marker. This marker is the current time in
+clock ticks. It has no relation to the real-world time. It is useful for
+comparing with another timing marker, and the difference is elapsed clock
+ticks.
+
+See also:  0414IPXScheduleEvent  0415IPXScheduleSpecialEvent
+;
+;-------------------------------------------------------------------
+!TOPIC 417 IPXGetLocalTarget
+!NOINDEX
+function 0302NetWare.IPXGetLocalTarget(var LocalTarget : TargetType;
+                                   var TransportTime : Word) : Byte;
+
+Returns the immediate address of an 0318IPXAddress. If the IPXAddress
+resides on a different network, then the immediate address returned will be
+that of a router station (bridge). The estimated one-way transport time is
+also returned.
+;
+;-------------------------------------------------------------------
+!TOPIC 418 IPXOpenSocket
+!NOINDEX
+function 0302NetWare.IPXOpenSocket(RequestedSocket : Word;
+                               Forever : Boolean) : Byte;
+
+Opens a socket. Returns the Function Completed Code (explained below). The
+Forever indicates whether the socket should remain open after the program
+terminates. If Forever is True, then the socket remains open until it is
+explicitly closed. If False, the socket is closed automatically when the
+program that opened it terminates. The Forever flag is useful when
+opening a socket within a TSR. The second parameter RequestedSocket
+indicates the socket number to open.
+
+Possible function result (Function Completed Code) values are:
+
+  $00  = Socket successfully open
+  $FF  = Socket is Already Open (IPXSocketAlreadyOpen)
+  $FE  = Socket Table is already full (IPXSocketTableFull)
+
+See also:  0419IPXCloseSocket
+;
+;-------------------------------------------------------------------
+!TOPIC 419 IPXCloseSocket
+!NOINDEX
+procedure 0302NetWare.IPXCloseSocket(SocketNum : Word);
+
+This function closes the socket specified by SocketNum. This
+automatically cancels all associated IPXECBs whether they are in use by
+IPX or the AES for sending, listening, or scheduling. After closing a
+socket, all incoming packets for that socket are ignored. Attempting to
+close a socket that is not open has no effect.
+
+Important: Transient applications (non TSR's) MUST close all their
+sockets before terminating. Failure to close a socket before terminating
+could result in hanging the station.
+
+Even though sockets may be open with a False value for the Forever
+parameter of 0418IPXOpenSocket, indicating that the socket should be
+closed automatically upon termination of the program, the application
+should still explicitly close all open sockets whenever possible (see
+Novell API Reference Volume 2).
+
+IPXCloseSocket may never be called from within an Event Service
+Routine. This is due to the fact that it is not reentrant.
+
+See also:  0418IPXOpenSocket
+;
+;-------------------------------------------------------------------
+!TOPIC 420 IPXAssignUniqueSocket
+!NOINDEX
+function 0302NetWare.IPXAssignUniqueSocket(var ReturnedSocket : Word;
+                                       Forever : Boolean) : Word;
+
+This routine is used to allow IPX to assign a socket number not currently
+in use. This is considered a high level IPX routine because the socket
+number is returned in native PC format (low byte, high byte) rather than
+native NetWare format (high byte, low byte). All IPX and SPX high
+level routines take and return sockets in PC format, and all low level
+routines take and return sockets in NetWare format.
+;
+;-------------------------------------------------------------------
+!TOPIC 421 IPXEventComplete
+!NOINDEX
+function 0302NetWare.IPXEventComplete(var IPXEvent : IPXRec;
+                                  var FinalResult : Byte) : Boolean;
+
+Under Windows
+!LINE
+function IPXEventComplete(IPXEvent : WinIPXRec;
+                          var FinalResult : Byte) : Boolean;
+
+Returns True if the event specified by IPXEvent has completed. If the
+event is complete, the final completion code is returned in FinalResult.
+
+See also:  0424IPXListen  0423IPXSend  0340IPX Error codes
+;
+;-------------------------------------------------------------------
+!TOPIC 422 IPXCancelEvent
+!NOINDEX
+function 0302NetWare.IPXCancelEvent(var IPXEvent : IPXRec) : Byte;
+
+Under Windows
+!LINE
+function IPXCancelEvent(IPXEvent : WinIPXRec) : Byte;
+
+Cancels IPXEvent. IPXEvent may refer to any IPX event, including send
+and listen events. If the IPXEvent is complete, then
+0421IPXEventComplete will return True and a CompletionCode of $FC. The
+application may then reuse the event variable IPXEvent.
+
+Possible function results are:
+
+  0    IPXEvent successfully cancelled.
+  $FF  IPXEvent was not active.
+  $F9  IPXEvent was active but could not cancel it.
+
+See also:  0424IPXListen    0423IPXSend    0421IPXEventComplete
+;
+;-------------------------------------------------------------------
+!TOPIC 423 IPXSend
+!NOINDEX
+function 0302NetWare.IPXSend(var IPXEvent : IPXRec;
+                         Receiver :  IPXAddress;
+                         Socket : Word;
+                         WaitForCompletion : Boolean;
+                         DataPacketSize : Word;
+                         var DataPacket) : Byte;
+
+Under Windows
+!LINE
+function IPXSend(IPXEvent : WinIPXRec;
+                 Receiver : IPXAddress;
+                 Socket : Word;
+                 WaitForCompletion : Boolean;
+                 DataPacketSize : Word;
+                 var DataPacket) : Byte;
+
+Opens the desired socket (if not open already) and prepares IPXEvent for
+a send operation.
+
+It is important to remember that an IPX send event cannot be assumed
+complete when this function returns. The 0323IPXRec and user data passed
+to this function must remain static until this function completes. In other
+words, they must either be global variables, or be declared on the heap and
+not freed until the operation completes. They should not be local
+variables, unless you can guarantee that the send operation will be
+completed or cancelled before the routine that they are local to completes.
+
+See also:  0422IPXCancelEvent  0424IPXListen
+;
+;-------------------------------------------------------------------
+!TOPIC 424 IPXListen
+!NOINDEX
+function 0302NetWare.IPXListen(var IPXEvent : IPXRec;
+                           Socket : Word;
+                           WaitForCompletion : Boolean;
+                           MaxPacketSize : Word;
+                           var DataPacket) : Byte;
+
+Under Windows
+!LINE
+function IPXListen(IPXEvent : WinIPXRec;
+                   Socket : Word;
+                   WaitForCompletion : Boolean;
+                   MaxPacketSize : Word;
+                   var DataPacket) : Byte;
+
+Opens the desired socket (if not open already) and prepares IPXEvent for
+a listen operation, and calls 0408IPXListenPrim to start listening.
+
+It is important to remember that an IPX Listen event cannot be assumed
+complete when this function returns. The IPXEvent and user data passed to
+this function must remain static until this function completes. In other
+words, they must either be global variables, or be declared on the heap and
+not freed until the operation completes. They should not be local
+variables, unless you can guarantee that the Listen operation will be
+completed or cancelled before the routine that they are local to completes.
+
+See also:  0422IPXCancelEvent  0423IPXSend
+;
+;-------------------------------------------------------------------
+!TOPIC 425 SPXServicesAvail
+!NOINDEX
+function 0302NetWare.SPXServicesAvail(var Version : Word;
+                                  var MaxSPXConn : Word;
+                                  var AvailSPXConn : Word) : Boolean;
+
+This function checks to see if SPX services are available. It returns True
+if they are, and False if they are not. If SPX services are available, the
+version number of the SPX driver is returned in the first VAR parameter
+(version major in high byte, minor in low), and the maximum number of SPX
+connections supported and the number of available SPX connections are
+returned in the next two.
+;
+;-------------------------------------------------------------------
+!TOPIC 426 SPXEstablishConnPrim
+!NOINDEX
+function 0302NetWare.SPXEstablishConnPrim(RetryCount : Byte;
+                                      WatchDog : Boolean;
+                                      var ECB : IPXECB;
+                                      var AssignedConn : Word) : Byte;
+
+Attempts to establish an SPX connection with a partner client.
+
+This routine may not be called under Windows.
+
+See also:  0429SPXAbortConnPrim  0427SPXListenForConnPrim  0428SPXTerminateConnPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 427 SPXListenForConnPrim
+!NOINDEX
+procedure 0302NetWare.SPXListenForConnPrim(Retry : Byte; WatchDog : Boolean;
+                                       var ECB : IPXECB);
+
+Attempts to establish an SPX connection with a partner client.
+
+This routine may not be called under Windows.
+
+See also:  0429SPXAbortConnPrim  0426SPXEstablishConnPrim  0428SPXTerminateConnPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 428 SPXTerminateConnPrim
+!NOINDEX
+procedure 0302NetWare.SPXTerminateConnPrim(ConnID : Word; var ECB : IPXECB);
+
+Terminates an existing connection (informs partner of intention to do so).
+
+This routine may not be called under Windows.
+
+See also:  0429SPXAbortConnPrim  0426SPXEstablishConnPrim  0427SPXListenForConnPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 429 SPXAbortConnPrim
+!NOINDEX
+procedure 0302NetWare.SPXAbortConnPrim(ConnID : Word);
+
+Terminates an existing connection (does not inform partner of intention to
+do so).
+
+See also:
+  0426SPXEstablishConnPrim     0427SPXListenForConnPrim
+  0428SPXTerminateConnPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 430 SPXConnStatus
+!NOINDEX
+function 0302NetWare.SPXConnStatus(ConnID : Word;
+                               var SPXStatusBuf : SPXStatusBlock)
+  : Boolean;
+
+Returns the status of an SPX connection.
+;
+;-------------------------------------------------------------------
+!TOPIC 431 SPXSendPrim
+!NOINDEX
+procedure 0302NetWare.SPXSendPrim(ConnID : Word; var ECB : IPXECB);
+
+The low level SPX send procedure used to request the sending of a
+sequenced packet.
+
+This routine may not be called under Windows.
+
+See also:  0432SPXListenPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 432 SPXListenPrim
+!NOINDEX
+procedure 0302NetWare.SPXListenPrim(var ECB : IPXECB);
+
+The low level SPX listen procedure used to inform NetWare that you are
+expecting the delivery of a sequenced packet.
+
+This routine may not be called under Windows.
+
+See also:  0431SPXSendPrim
+;
+;-------------------------------------------------------------------
+!TOPIC 433 SPXEventComplete
+!NOINDEX
+function 0302NetWare.SPXEventComplete(var SPXEvent : SPXRec;
+                                  var FinalResult : Byte;
+                                  var DataType : Byte) : Boolean;
+
+Under Windows
+!LINE
+function SPXEventComplete(SPXEvent : WinSPXRec;
+                          var FinalResult : Byte;
+                          var DataType : Byte) : Boolean;
+
+Returns True if the referenced SPXEvent is complete. If so, the
+FinalResult code and the DataType field of the SPX record are
+returned.
+
+See also:  0434SPXEstablishConn  0435SPXListenForConn  0436SPXSend
+;
+;-------------------------------------------------------------------
+!TOPIC 434 SPXEstablishConn
+!NOINDEX
+function 0302NetWare.SPXEstablishConn(var SPXEvent : SPXRec;
+                                  Receiver : 0318IPXAddress;
+                                  Socket : Word;
+                                  WaitForCompletion : Boolean;
+                                  MaxListenDataSize : Word;
+                                  NumListenPoolECBs : Byte;
+                                  PoolESRInPascal : Pointer) : Byte;
+
+Under Windows
+!LINE
+function SPXEstablishConn(var SPXEvent : WinSPXRec;
+                          Receiver : IPXAddress;
+                          Socket : Word;
+                          WaitForCompletion : Boolean;
+                          MaxListenDataSize : Word;
+                          NumListenPoolECBs : Byte;
+                          PoolESRInPascal : Pointer) : Byte;
+
+The high level SPX function to establish a connection with a partner
+SPX client. This routine isolates the programmer from the details of
+building the SPX header and the Event Control Block. It is designed for
+use with the 0435SPXListenForConn function. MaxDataSize is the maximum
+size for the data buffer for each ECB in the Listen ECB Pool.
+NumPoolECBs is the number of Listen ECBs to allocate for the Pool
+(MUST be at least one). PoolESRInPascal points to a Pascal ESR. If no
+user ESR is required, pass Nil for this parameter.
+
+The simplest useful Pascal ESR would contain the following:
+
+  {$F+}
+  procedure SPXESR(var SPXEvent : SPXRec;
+                   CompletionCode : Byte;
+                   PoolIndex : Byte;
+                   DataType  : Byte;
+                   DataPtr   : Pointer);
+  begin
+    if CompletionCode = 0 then begin
+      {Process data of type DataType at DataPtr^}
+      ...
+    end
+    else
+      {Set an error flag} ;
+
+    {Return the event control block back to the free pool}
+    SPXReplenishPool(SPXEvent, PoolIndex);
+  end;
+  {$F-}
+
+See also:  0433SPXEventComplete  0435SPXListenForConn
+;
+;-------------------------------------------------------------------
+!TOPIC 435 SPXListenForConn
+!NOINDEX
+function 0302NetWare.SPXListenForConn(var SPXEvent : SPXRec;
+                                  Socket : Word;
+                                  WaitForCompletion : Boolean;
+                                  MaxDataSize : Word;
+                                  NumPoolECBs : Byte;
+                                  PoolESRInPascal : Pointer) : Byte;
+
+Under Windows
+!LINE
+function SPXListenForConn(var SPXEvent : WinSPXRec;
+                          Socket : Word;
+                          WaitForCompletion : Boolean;
+                          MaxDataSize : Word;
+                          NumPoolECBs : Byte;
+                          PoolESRInPascal : Pointer) : Byte;
+
+The high level SPX function to establish a connection with a partner
+SPX client. This routine isolates the programmer from the details of
+building the SPX header and the Event Control Block. It is designed for
+use with the 0434SPXEstablishConn function. MaxDataSize is the maximum
+size for the data buffer for each ECB in the Listen ECB Pool.
+NumPoolECBs is the number of Listen ECBs to allocate for the Pool
+(MUST be at least one). PoolESRInPascal points to a Pascal ESR If no
+user ESR is required, pass Nil for this parameter.
+
+See also:  0434SPXEstablishConn  0433SPXEventComplete
+;
+;-------------------------------------------------------------------
+!TOPIC 436 SPXSend
+!NOINDEX
+procedure 0302NetWare.SPXSend(var SPXEvent : SPXRec;
+                          WaitForCompletion : Boolean;
+                          DataType : Byte;
+                          DataPacketSize : Word;
+                          var DataPacket);
+
+Under Windows
+!LINE
+procedure SPXSend(SPXEvent : WinSPXRec;
+                  WaitForCompletion : Boolean;
+                  DataType : Byte;
+                  DataPacketSize : Word;
+                  DataPacket : Pointer);
+
+The high level SPX function to send a sequenced packet to a connection
+partner. This routine isolates the programmer from the details of building
+the SPX header and the Event Control Block. It is designed for use with
+the 0440SPXListenPooled procedure.
+;
+;-------------------------------------------------------------------
+!TOPIC 437 SPXTerminateConn
+!NOINDEX
+procedure 0302NetWare.SPXTerminateConn(var SPXEvent : SPXRec);
+
+Under Windows
+!LINE
+procedure SPXTerminateConn(SPXEvent : WinSPXRec);
+
+Cancels all pending events, terminates the connection, and frees heap space
+used by SPXRec's SPXPoolRec.
+
+See also:  0438SPXAbortConn  0434SPXEstablishConn  0435SPXListenForConn
+;
+;-------------------------------------------------------------------
+!TOPIC 438 SPXAbortConn
+!NOINDEX
+procedure 0302NetWare.SPXAbortConn(var SPXEvent : SPXRec);
+
+Under Windows
+!LINE
+procedure SPXAbortConn(SPXEvent : WinSPXRec);
+
+Abort active connection. This routine does not inform partner of intention
+to do so, nor is the heap space used reclaimed. 0437SPXTerminateConn
+would be used instead in most circumstances.
+
+See also:  0434SPXEstablishConn  0435SPXListenForConn
+;
+;-------------------------------------------------------------------
+!TOPIC 439 SPXPoolCancelAll
+!NOINDEX
+function 0302NetWare.SPXPoolCancelAll(var PoolRec : SPXPoolRec) : Boolean;
+
+Under Windows
+!LINE
+function SPXPoolCancelAll(PoolRec : WinSPXPoolRec) : Boolean;
+
+Cancel the entire Pool's events. Does this by closing and reopening the
+socket associated with the pool. Returns False if the socket cannot be
+reopened.
+;
+;-------------------------------------------------------------------
+!TOPIC 440 SPXListenPooled
+!NOINDEX
+function 0302NetWare.SPXListenPooled(var SPXEvent : SPXRec;
+                                 var CompleteCode : Byte;
+                                 var PoolIndex : Byte;
+                                 var DataType : Byte;
+                                 var DataPtr : Pointer) : Boolean;
+
+Under Windows
+!LINE
+function SPXListenPooled(SPXEvent : WinSPXRec;
+                         var CompleteCode : Byte;
+                         var PoolIndex : Byte;
+                         var DataType : Byte;
+                         var DataPtr : Pointer) : Boolean;
+
+Returns True when an SPX message has been received. This function is called
+by a station after establishing an SPX session to see if any incoming
+packets have been received.
+
+See also:  0443SPXPoolStartListening  0436SPXSend
+;
+;-------------------------------------------------------------------
+!TOPIC 441 SPXPoolECBPtr
+!NOINDEX
+function 0302NetWare.SPXPoolECBPtr(var PoolRec : SPXPoolRec;
+                               PoolIndex : Byte) : ECBPtr;
+
+Under Windows
+!LINE
+function SPXPoolECBPtr(PoolRec : WinSPXPoolRec;
+                       PoolIndex : Byte) : ECBPtr;
+
+Returns a pointer to the ECB in PoolRec at PoolIndex.
+
+See also:  0442SPXPoolDataPtr
+;
+;-------------------------------------------------------------------
+!TOPIC 442 SPXPoolDataPtr
+!NOINDEX
+function 0302NetWare.SPXPoolDataPtr(var PoolRec : SPXPoolRec;
+                                PoolIndex : Byte) : Pointer;
+
+Under Windows
+!LINE
+function SPXPoolDataPtr(PoolRec : WinSPXPoolRec;
+                        PoolIndex : Byte) : Pointer;
+
+Returns the data pointer for the PoolIndex element of PoolRec.
+
+See also:  0441SPXPoolECBPtr
+;
+;-------------------------------------------------------------------
+!TOPIC 443 SPXPoolStartListening
+!NOINDEX
+procedure 0302NetWare.SPXPoolStartListening(var PoolRec : SPXPoolRec);
+
+Under Windows
+!LINE
+procedure SPXPoolStartListening(var PoolRec : WinSPXPoolRec);
+
+Submit all the ECBs in the pool to SPX to Listen for a Sequenced Packet.
+
+See also:  0440SPXListenPooled
+;
+;-------------------------------------------------------------------
+!TOPIC 444 SPXReplenishPool
+!NOINDEX
+procedure 0302NetWare.SPXReplenishPool(var SPXEvent : SPXRec;
+                                   PoolIndex : Byte);
+
+Under Windows
+!LINE
+procedure SPXReplenishPool(SPXEvent : WinSPXRec; PoolIndex : Byte);
+
+Submit specified element of the SPX Listen pool back to SPX for listening.
+
+See also:  0445SPXReplenishAll
+;
+;-------------------------------------------------------------------
+!TOPIC 445 SPXReplenishAll
+!NOINDEX
+procedure 0302NetWare.SPXReplenishAll(var SPXEvent : SPXRec);
+
+Under Windows
+!LINE
+procedure SPXReplenishAll(SPXEvent : WinSPXRec);
+
+Submit each unused ECB to the SPX for a listen event.
+
+See also:  0444SPXReplenishPool
+;
+;-------------------------------------------------------------------
+!TOPIC 446 SPXListenCount
+!NOINDEX
+function 0302NetWare.SPXListenCount(var SPXEvent : SPXRec) : Byte;
+
+Under Windows
+!LINE
+function SPXListenCount(SPXEvent : WinSPXRec) : Byte;
+
+Return the number of ECBs currently listening in the pool.
+;
+;-------------------------------------------------------------------
+!TOPIC 447 AsciiZ2Str
+!NOINDEX
+function 0302NetWare.AsciiZ2Str(var Buffer; Max : Byte) : String;
+
+Converts an Asciiz string (of any type) to a Turbo Pascal string.
+;
+;-------------------------------------------------------------------
+!TOPIC 448 NetWareSwapLong
+!NOINDEX
+function 0302NetWare.NetWareSwapLong(L : LongInt) : LongInt;
+
+Swap NetWare LongInt to native PC format.
+;
+;-------------------------------------------------------------------
+!TOPIC 449 Windows declarations
+!NOINDEX
+!NOSEARCH
+NetWare provides the following data types and routines that are specific to
+usage under Microsoft Windows:
+
+Constants, Types, and Variables
+  0450DPMIErrorVal                   0451NoESR
+  0452Registers                      0453UserESRType
+  0464WinAESECB                      0454WinESRType
+  0455WinIPXRec                      0467WinSPXPoolRec
+  0456WinSPXRec
+
+Routines
+  0465AllocateWinAESECB              0457AllocateWindowsESR
+  0458AllocateWinIPXRec              0459AllocateWinSPXRec
+  0466FreeWinAESECB                  0460FreeWindowsESR
+  0461FreeWinIPXRec                  0462FreeWinSPXRec
+;
+;-------------------------------------------------------------------
+!TOPIC 450 DPMIErrorVal
+!NOINDEX
+const
+  DPMIErrorVal  = $AA;
+
+Returned when a DPMI service request failed.
+;
+;-------------------------------------------------------------------
+!TOPIC 451 NoESR
+!NOINDEX
+var
+  NoESR : UserESRType absolute NilPtr;
+
+A predefined do-nothing Event Service Routine for Windows.
+;
+;-------------------------------------------------------------------
+!TOPIC 452 Registers
+!NOINDEX
+type
+  Registers = TRegisters;
+
+This type is defined to save us the trouble of changing every routine
+using the Registers type, which has been renamed to TRegisters in
+Turbo Pascal for Windows' WinDos unit.
+;
+;-------------------------------------------------------------------
+!TOPIC 453 UserESRType
+!NOINDEX
+type
+  UserESRType = procedure (var SPXEvent : WinSPXRec;
+                           CompletionCode : Byte;
+                           PoolIndex : Byte;
+                           DataType : Byte;
+                           DataPtr : Pointer);
+
+This is the procedure type used for event service routines written in
+TPW.
+;
+;-------------------------------------------------------------------
+!TOPIC 454 WinESRType
+!NOINDEX
+type
+  WinESRType =
+    record
+      Regs     : DPMIReg;
+      PoolPtr  : SPXPoolRecPtr;
+      CallBack : Pointer;
+      UserESR  : UserESRType;
+      DataSegm : Word;
+    end;
+
+This record structure contains information needed to allow
+applications running under Windows to have SPX Event Service Routines.
+A procedure of type UserESRType is associated with a WinESRType
+variable through a call to 0457AllocateWindowsESR.
+;
+;-------------------------------------------------------------------
+!TOPIC 455 WinIPXRec
+!NOINDEX
+type
+  WinIPXRec =
+    record
+      wirP, wirR : IPXRecPtr;
+    end;
+
+This record type replaces the 0323IPXRec in most IPX calls. It contains
+both real and protected mode pointers to an IPXRec. A variable of this
+type is initialized with a call to 0458AllocateWinIPXRec and disposed of
+with a call to 0461FreeWinIPXRec.
+;
+;-------------------------------------------------------------------
+!TOPIC 456 WinSPXRec
+!NOINDEX
+type
+  WinSPXRec =
+    record
+      wsrR, wsrP : SPXRecPtr;
+    end;
+
+This record type replaces the 0331SPXRec in most SPX calls. It contains
+both real and protected mode pointers to an SPXRec. A variable of this
+type is initialized with a call to 0459AllocateWinSPXRec and disposed of
+with a call to 0462FreeWinSPXRec.
+;
+;-------------------------------------------------------------------
+!TOPIC 457 AllocateWindowsESR
+!NOINDEX
+function 0302NetWare.AllocateWindowsESR(EventServiceRoutine : UserESRType;
+                                    DataSegment : Word;
+                                    var WindowsESR : WinESRType)
+  : Boolean;
+
+Requests a real mode callback to the routine of type 0453UserESRType
+and initializes the data structures needed to support ESRs in WinApps.
+
+See also:  0460FreeWindowsESR
+;
+;-------------------------------------------------------------------
+!TOPIC 458 AllocateWinIPXRec
+!NOINDEX
+function 0302NetWare.AllocateWinIPXRec(DataSize : Word;
+                                var Event : WinIPXRec) : Boolean;
+
+Allocates a 0455WinIPXRec which contains pointers to an 0323IPXRec
+addressable in both real and protected modes. Also allocates space for the
+data addressable in real mode. You must call these routines to initialize
+a variable of type WinIPXRec before passing that variable to the other IPX
+routines.
+
+See also:  0461FreeWinIPXRec
+;
+;-------------------------------------------------------------------
+!TOPIC 459 AllocateWinSPXRec
+!NOINDEX
+function 0302NetWare.AllocateWinSPXRec(var WSR : WinSPXRec) : Boolean;
+
+Allocates a 0456WinSPXRec which contains pointers to an 0331SPXRec addressable in
+both real and protected modes. Also allocates space for the data
+addressable in real mode. You must call these routines to initialize a
+variable of type WinSPXRec before passing that variable to the other SPX
+routines.
+
+See also: 0462FreeWinSPXRec
+;
+;-------------------------------------------------------------------
+!TOPIC 460 FreeWindowsESR
+!NOINDEX
+procedure 0302NetWare.FreeWindowsESR(var WindowsESR : WinESRType);
+
+Free a real mode callback previously allocated with a call to
+0457AllocateWindowsESR.
+;
+;-------------------------------------------------------------------
+!TOPIC 461 FreeWinIPXRec
+!NOINDEX
+procedure 0302NetWare.FreeWinIPXRec(Event : WinIPXRec);
+
+Frees a 0455WinIPXRec previously allocated with
+0458AllocateWinIPXRec. The event associated with this WinIPXRec must be
+completed or cancelled before this procedure is called.
+;
+;-------------------------------------------------------------------
+!TOPIC 462 FreeWinSPXRec
+!NOINDEX
+procedure 0302NetWare.FreeWinSPXRec(WSR : WinSPXRec);
+
+Frees a 0456WinSPXRec previously allocated with 0459AllocateWinSPXRec.
+The event associated with this WinSPXRec must be completed or cancelled
+before this procedure is called.
+;
+;-------------------------------------------------------------------
+!TOPIC 463 AESECBPtr
+!NOINDEX
+type
+  AESECBPtr = ^AESECB;
+
+A pointer to an 0322AESECB.
+;
+;-------------------------------------------------------------------
+!TOPIC 464 WinAESECB
+!NOINDEX
+type
+  WinAESECB =
+    record
+      AESECBR, AESECBP : AESECBPtr;
+    end;
+
+This record type replaces the 0322AESECB in 0414IPXScheduleEvent and
+0415IPXScheduleSpecialEvent. It contains both real and protected mode
+pointers to an AESECB. A variable of this type is initialized with a
+call to 0465AllocateWinAESECB and disposed of with a call to 0466FreeWinAESECB.
+;
+;-------------------------------------------------------------------
+!TOPIC 465 AllocateWinAESECB
+!NOINDEX
+function 0302NetWare.AllocateWinAESECB(DataSize : Word;
+                                   var ECB : WinAESECB) : Boolean;
+
+Allocates a 0464WinAESECB which contains pointers to an AESECB
+addressable in both real and protected modes. Also allocates space for the
+data addressable in real mode.
+
+See also:  0466FreeWinAESECB
+;
+;-------------------------------------------------------------------
+!TOPIC 466 FreeWinAESECB
+!NOINDEX
+procedure 0302NetWare.FreeWinAESECB(ECB : WinAESECB);
+
+Frees a 0464WinAESECB previously allocated with
+0465AllocateWinAESECB. The event associated with this WinAESECB must be
+completed or cancelled before this procedure is called.
+;
+;-------------------------------------------------------------------
+!TOPIC 467 WinSPXPoolRec
+!NOINDEX
+type
+  WinSPXPoolRec =
+    record
+      prR, prP : SPXPoolRecPtr;
+    end;
+
+This record type replaces the 0330SPXPoolRec in certain SPX calls. It
+contains both real and protected mode pointers to an SPXPoolRec. This type
+is a component of the 0456WinSPXRec. The WinSPXPoolRec is allocated and
+maintained for you when you call 0434SPXEstablishConn or
+0435SPXListenForConn.
