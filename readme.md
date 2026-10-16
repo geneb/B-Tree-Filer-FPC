@@ -52,6 +52,8 @@ The compiler mode is set per unit, so your own programs can use any mode, includ
 
 The help files in the `help` directory can be rebuilt using the MAKEHELP program in the `tools` directory (an MS-DOS program).
 
+In order to build MAKEHELP for Linux or Windows, please see the FPC port of Object Professional: https://github.com/geneb/ObjectProfessionalFPC.  The source code is in the `src/oprodemo` directory.
+
 The manual for version 5.23 of B-Tree Filer is available here: https://archive.org/details/b-tree-filer-v-5.23
 
 If you or someone you know has a more recent version of the B-Tree Filer manual, please reach out.  I can non-destructively scan it at my expense and return it.
