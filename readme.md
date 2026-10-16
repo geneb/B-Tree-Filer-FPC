@@ -16,6 +16,8 @@ I owned a copy of B-Tree Filer that I used back in the mid 90's and after chasin
 
 While setting up this repository, I found that version 5.55 of B-Tree Filer for DOS may have been the last version released for DOS.  If you have that version, please reach out!
 
+The original MS-DOS version of B-Tree Filer can be found here: https://github.com/geneb/B-Tree-Filer
+
 ## Free Pascal port
 
 This version of B-Tree Filer has been ported to Free Pascal (tested with version 3.2.2) and runs under Windows and Linux. All inline machine code and assembler source has been replaced by Pascal code, and the MS-DOS specific parts were replaced as follows:
@@ -30,6 +32,7 @@ This version of B-Tree Filer has been ported to Free Pascal (tested with version
 
 `changes.txt` lists every changed file.
 
+* The original distribution source code can be found in the src/unported/lzh directory.  The LZH files can be opened with 7zip.
 ## Building
 
 You need Free Pascal 3.2 or later. Change to the `src` directory and run `./build.sh` (Linux) or `build.bat` (Windows). This compiles all units into `src/units` and the example programs into `src/bin`. Options given on the command line are passed to the compiler, for example `./build.sh -Twin64` makes a 64 bit Windows cross build on Linux.
